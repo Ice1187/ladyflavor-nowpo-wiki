@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Episodes{% endblock %}
+
+{% block content %}
+<h1>Episodes</h1>
+<ul>
+    {% for episode in episodes %}
+    <li>
+        <a href="{{ url_for('topics', episode_id=episode.episode_id) }}">{{ episode.title }}</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
+

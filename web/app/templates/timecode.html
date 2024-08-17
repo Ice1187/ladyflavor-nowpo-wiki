@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Timecodes for Episode {{ episode_id }}{% endblock %}
+
+{% block content %}
+<h1>Timecodes for Episode {{ episode_id }}</h1>
+
+{% if timecodes %}
+<ul>
+    {% for timecode in timecodes %}
+    <li>
+        <strong>{{ timecode.time }}</strong>: {{ timecode.text }} (Tag: {{ timecode.tag }})
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>Timecodes data is not available yet. Placeholder for now.</p>
+{% endif %}
+{% endblock %}
+

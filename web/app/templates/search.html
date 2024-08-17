@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Search{% endblock %}
+
+{% block content %}
+<h1>Search Transcripts</h1>
+
+<form method="POST">
+    <input type="text" name="query" placeholder="Search for episodes..." required>
+    <button type="submit">Search</button>
+</form>
+
+<h2>Results</h2>
+{% if results|length > 0 %}
+<ul>
+    {% for result in results %}
+    <li>
+        <a href="{{ url_for('topics', episode_id=result.episode_id) }}">{{ result.title }}</a><br>
+        <small>{{ result.snippet|safe }}...</small>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No results found for your query.</p>
+{% endif %}
+{% endblock %}
+

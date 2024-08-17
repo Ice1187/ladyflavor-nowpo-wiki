@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Podcast Analysis{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <!-- Menu Bar -->
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('episodes') }}">Episodes</a></li>
+            <li><a href="{{ url_for('topics', episode_id='222') }}">Topics</a></li>
+            <li><a href="{{ url_for('timecode', episode_id='222') }}">Timecode</a></li>
+            <li><a href="{{ url_for('search') }}">Search</a></li>
+            <li><a href="{{ url_for('trend') }}">Trend</a></li>
+        </ul>
+    </nav>
+
+    <!-- Content -->
+    <div>
+        {% block content %}
+        <!-- Page-specific content will be placed here -->
+        {% endblock %}
+    </div>
+</body>
+</html>
+

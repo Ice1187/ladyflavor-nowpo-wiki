@@ -2,7 +2,14 @@
 ## Transcribing
 - openai-whisper model large
 ```bash
-whisper --model large --output_dir transcripts -f json --language zh --device cuda ./audios/EP222\ 該把錢變成誰喜歡的樣子？.mp3
+for f in audios/*; do
+  output_file="transcripts/$(basename "${f%.*}.txt")"
+  if [ ! -f "$output_file" ]; then
+    whisper --model large --output_dir transcripts -f all --language zh --initial_prompt '嗨 大家好 歡迎來到好味小姐開束縛 我還你原型' --device cuda "$f"
+  else
+    echo "Skipping $f, corresponding transcript already exists."
+  fi
+done
 ```
 
 ## Might Be Useful
@@ -12,19 +19,22 @@ whisper --model large --output_dir transcripts -f json --language zh --device cu
 - 據說有粉絲整理的逐字稿?
 
 ## TODO
+- [x] use small LM to translate China Chinese to Taiwan Chinese -> OpenCC
 
 ### Single episode
 - [ ] main topic
 - [ ] topic tags (main topic + subtopics, like Gaole, 體檢)
 - [ ] timecode of certain discussion
-- [ ] full text search
+- [ ] Full text search
 - [ ] Word Cloud (?
 
 ### Cross episode
 - [ ] reocurring topics (國小作文100題、排泄)
+- [x] Full text search -> mongodb text search
 - [ ] Trend / Topic of Year
 - [ ] Word Cloud (?
 - [ ] What do to on multiple episodes
+- [ ] NER to recognize podcaster and their pets? 
 
 ### General Improvement
 - [ ] Build feedback pipeline (timecode, tags)

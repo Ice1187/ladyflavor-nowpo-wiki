@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Topics for Episode {{ episode_id }}{% endblock %}
+
+{% block content %}
+<h1>Topics for Episode {{ episode_id }}</h1>
+
+{% if topics %}
+<ul>
+    {% for topic in topics %}
+    <li>{{ topic }}</li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>Topics data is not available yet. Placeholder for now.</p>
+{% endif %}
+{% endblock %}
+

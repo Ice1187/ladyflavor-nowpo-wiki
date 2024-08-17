@@ -1,0 +1,35 @@
+/* Basic reset for margin and padding */
+body, ul {
+    margin: 0;
+    padding: 0;
+}
+
+/* Styling for the navigation menu */
+nav {
+    background-color: #DDD; /* Dark background for the nav bar */
+    padding: 10px 20px; /* Add some padding for spacing */
+}
+
+nav ul {
+    list-style-type: none; /* Remove bullet points */
+    display: flex; /* Display list items in a row */
+    justify-content: flex-start; /* Align items to the left */
+}
+
+nav ul li {
+    margin-right: 20px; /* Space between menu items */
+}
+
+nav ul li a {
+    text-decoration: none; /* Remove underline from links */
+    color: black;
+    font-weight: bold; /* Bold font for links */
+    padding: 5px 10px; /* Add padding to make the clickable area larger */
+    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+nav ul li a:hover {
+    background-color: #BBB; /* Slightly lighter background on hover */
+    border-radius: 5px; /* Rounded corners for hover effect */
+}
+
