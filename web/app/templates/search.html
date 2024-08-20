@@ -6,20 +6,23 @@
 <h1>Search Transcripts</h1>
 
 <form method="POST">
+    <span>Search Text:</span>
     <input type="text" name="query" placeholder="Search for episodes..." required>
-
-    <!-- Optional Episode Number Input -->
-    <label for="episode_number">Episode Number (optional):</label>
-    <input type="number" name="episode_number" id="episode_number" placeholder="Enter episode number">
+    <br/>
 
     <!-- Optional Dropdown for Episode Titles -->
-    <label for="episode_id">Or Select an Episode:</label>
+    <label for="episode_id">(Optional) Select an Episode:</label>
     <select name="episode_id" id="episode_id">
         <option value="">Select an episode</option>
         {% for episode in episodes %}
         <option value="{{ episode._id }}">{{ episode.title }}</option>
         {% endfor %}
     </select>
+
+    <!-- Optional Episode Number Input -->
+    <label for="episode_number">or enter Episode Number:</label>
+    <input type="number" name="episode_number" id="episode_number" placeholder="Enter episode number">
+
 
     <button type="submit">Search</button>
 </form>
