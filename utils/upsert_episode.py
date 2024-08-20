@@ -15,36 +15,40 @@ def load_episodes_data(json_file):
 # Upsert each episode in the list into the episodes collection
 def upsert_episodes_data(episodes_list):
     for episode_data in episodes_list:
-        # Upsert based on episode_id
+        # Upsert based on episode_number
         result = episodes_collection.update_one(
-            {"episode_id": episode_data["episode_id"]},  # Query by episode_id
+            {"episode_number": episode_data["episode_number"]},  # Query by episode_number
             {"$set": episode_data},  # Set the episode data
             upsert=True  # Insert if it does not exist
         )
-        print(f"Episode {episode_data['episode_id']} upserted. {result.modified_count} document(s) modified.")
+        print(f"Episode {episode_data['episode_number']} upserted. {result.modified_count} document(s) modified.")
         upsert_search_index_data(episode_data)  # Upsert the search index for the episode
 
 # Upsert search index data for each episode (one document per transcript segment)
 def upsert_search_index_data(episode_data):
     bulk_ops = []
-    episode_id = episodes_collection.find_one({"episode_id": episode_data["episode_id"]})["_id"]
+    episode = episodes_collection.find_one(
+        {"episode_number": episode_data["episode_number"]},
+        {"_id": 1, "episode_number": 1}
+    )
 
     for transcript in episode_data["transcript"]:
         search_index_doc = {
-            "episode_id": episode_id,
+            "episode_id": episode['_id'],
+            "episode_number": episode['episode_number'],
             "timecode": transcript["timecode"],
             "text": transcript["text"],
             #"topics": transcript["topics"]
         }
         bulk_ops.append(UpdateOne(
-            {"episode_id": episode_id, "timecode": transcript["timecode"]},  # Query by episode and timecode
+            {"episode_id": episode['_id'], "timecode": transcript["timecode"]},  # Query by episode and timecode
             {"$set": search_index_doc},  # Set the document
             upsert=True  # Insert if it does not exist
         ))
     
     if bulk_ops:
         result = search_index_collection.bulk_write(bulk_ops)
-        print(f"Search index for episode {episode_data['episode_id']} upserted: {result.modified_count} document(s) modified.")
+        print(f"Search index for episode {episode_data['episode_number']} upserted: {result.modified_count} document(s) modified.")
 
 def create_full_text_search_index():
     search_index_collection.create_index([("text", "text")])
@@ -52,14 +56,14 @@ def create_full_text_search_index():
 
 
 # Perform a demo query to check if data is correctly uploaded
-def perform_demo_query(episode_id):
-    episode = episodes_collection.find_one({"episode_id": episode_id})
+def perform_demo_query(episode_number):
+    episode = episodes_collection.find_one({"episode_number": episode_number})
     if episode:
-        print(f"Episode {episode_id} found: {episode['title']}")
+        print(f"Episode {episode_number} found: {episode['title']}")
         #print("Topics:", episode["topics"])
         print("Sample Transcript:", episode["transcript"][0])
     else:
-        print(f"Episode {episode_id} not found.")
+        print(f"Episode {episode_number} not found.")
 
 # Main function to load data, upsert, and verify
 def main():
@@ -73,7 +77,7 @@ def main():
     upsert_episodes_data(episodes_data)
 
     print("Performing demo query...")
-    perform_demo_query(episodes_data[0]["episode_id"])  # Check the first episode as a sample
+    perform_demo_query(episodes_data[0]["episode_number"])  # Check the first episode as a sample
 
 if __name__ == "__main__":
     main()

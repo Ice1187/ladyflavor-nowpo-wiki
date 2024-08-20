@@ -23,9 +23,14 @@ def main():
       continue
 
     title = os.path.splitext(os.path.basename(transcript_file))[0]
-    episode_id = int(re.search(r'EP(\d+)', title).group(1))
-    captions = webvtt.read(transcript_file)
+    # Capture the episode number and optional part, e.g., 60_1 and 60_2
+    episode_match = re.search(r'EP(\d+)(?:_(\d+))?', title)
+    # Extract episode number
+    episode_number = int(episode_match.group(1))
+    # Extract episode part, or default to 1 if not present
+    episode_part = int(episode_match.group(2)) if episode_match.group(2) else None
 
+    captions = webvtt.read(transcript_file)
     timecodes = []
     texts = []
     for caption in captions:
@@ -35,7 +40,8 @@ def main():
     tokenized_texts = tokenize_sentences(texts, ws)
 
     output.append({
-      'episode_id': episode_id,
+      'episode_number': episode_number,
+      'episode_part': episode_part,
       'title': title,
       'transcript': [
         {'timecode': timecode, 'text': text} for timecode, text in zip(timecodes, tokenized_texts)
@@ -45,17 +51,17 @@ def main():
   with open('episodes.json', 'w') as f:
     json.dump(output, f)
 
-  print('[+] Dump to episodes.json')
-  print('''
-[*] To import episodes.json to Mongodb:
-  1. docker cp ./episodes.json mongodb:/episodes.json
-  2. docker exec -it mongodb bash
-  3. mongoimport --db podcast_analysis --collection episodes --file /episodes.json --jsonArray
-
-[*] To create text index for full text search:
-  1. docker exec -it mongodb mongosh
-  2. use podcast_analysis
-  3. db.episodes.createIndex({ transcript: "text" })
-''')
+#  print('[+] Dump to episodes.json')
+#  print('''
+#[*] To import episodes.json to Mongodb:
+#  1. docker cp ./episodes.json mongodb:/episodes.json
+#  2. docker exec -it mongodb bash
+#  3. mongoimport --db podcast_analysis --collection episodes --file /episodes.json --jsonArray
+#
+#[*] To create text index for full text search:
+#  1. docker exec -it mongodb mongosh
+#  2. use podcast_analysis
+#  3. db.episodes.createIndex({ transcript: "text" })
+#''')
 
 main()
