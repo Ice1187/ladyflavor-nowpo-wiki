@@ -21,6 +21,7 @@ done
 ## TODO
 - [x] use small LM to translate China Chinese to Taiwan Chinese -> OpenCC
 - [ ] missing transcritps of episode 4-9, 27, 50-99, 223
+- [ ] there are episodes `60_1` and `60_2`, fuck
 
 ### Single episode
 - [ ] main topic
