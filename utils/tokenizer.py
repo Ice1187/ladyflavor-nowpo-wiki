@@ -21,8 +21,10 @@ def tokenize_sentences(sentence_list, ws):
       sentence_segmentation=True,
       segment_delimiter_set = {",", "。", ":", "?", "!", ";", ' '}
     )
-    words = [word for word_sentence in word_sentence_list for word in word_sentence if word.strip()]
-    return ' '.join(words)
+    stripped_word_sentence_list = [[word for word in words if word.strip()] for words in word_sentence_list]
+    return [' '.join(words) for words in stripped_word_sentence_list]
+    #word_sen = [word for word_sentence in word_sentence_list for word in word_sentence if word.strip()]
+    #return ' '.join(words)
 
 
 def main():

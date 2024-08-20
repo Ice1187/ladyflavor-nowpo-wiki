@@ -3549,6 +3549,17 @@ optional = ["python-socks", "wsaccel"]
 test = ["websockets"]
 
 [[package]]
+name = "webvtt-py"
+version = "0.5.1"
+description = "WebVTT reader, writer and segmenter"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "webvtt-py-0.5.1.tar.gz", hash = "sha256:2040dd325277ddadc1e0c6cc66cbc4a1d9b6b49b24c57a0c3364374c3e8a3dc1"},
+    {file = "webvtt_py-0.5.1-py3-none-any.whl", hash = "sha256:9d517d286cfe7fc7825e9d4e2079647ce32f5678eb58e39ef544ffbb932610b7"},
+]
+
+[[package]]
 name = "werkzeug"
 version = "3.0.3"
 description = "The comprehensive WSGI web application library."
@@ -3665,4 +3676,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "c6d3417ce4cc60bd180d9d5e9bb9415cd1ed195be0a2ea2735a187b869a24939"
+content-hash = "b17c29b496e3fd89a40dd1266b346bed73f4f1e480377b2b80717cb881ec9fc6"

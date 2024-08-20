@@ -7,7 +7,7 @@ app = Flask(__name__)
 ws = WS('../utils/ckiptagger/data')
 
 # Set the configuration
-app.config['MONGO_URI'] = 'mongodb://localhost:27017/podcast_analysis'
+app.config['MONGO_URI'] = 'mongodb://localhost:27017/podcast_db'
 
 # Initialize MongoDB with the app
 mongo = PyMongo(app)

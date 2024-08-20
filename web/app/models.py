@@ -1,19 +1,21 @@
 from app import mongo
 import re
 
-# Function to fetch topics by episode ID
+# FIXME: Function to fetch topics by episode ID
 def get_topics_by_episode(episode_id):
   episode = mongo.db.episodes.find_one({"episode_id": episode_id}, {"topics": 1})
   if episode:
     return episode.get("topics", [])
   return []
 
-# Function to fetch timecodes by episode ID
-def get_timecodes_by_episode(episode_id):
-  episode = mongo.db.episodes.find_one({"episode_id": episode_id}, {"timecodes": 1})
-  if episode:
-    return episode.get("timecodes", [])
-  return []
+# Function to fetch episode by episode number
+def get_episode_by_id(episode_id):
+    try:
+        episode = mongo.db.episodes.find_one({"episode_id": episode_id})
+        return episode
+    except Exception as e:
+        print(f"Error fetching episode: {e}")
+        return None
 
 def highlight_terms(text, query_terms):
     # Escape special characters in query terms
@@ -27,35 +29,43 @@ def highlight_terms(text, query_terms):
 
     return highlighted_text
 
-# Function to perform full-text search on transcripts
+# Function to perform full-text search on transcripts from the search_index collection
 def search_transcripts(query):
-  search_results = mongo.db.episodes.find(
-    {"$text": {"$search": query}},  # Text search
-    {"score": {"$meta": "textScore"}}  # Include the score in the returned documents
-  ).sort([("score", {"$meta": "textScore"})])  # Sort by textScore
+    # Perform text search on the search_index collection
+    search_results = mongo.db.search_index.find(
+        {"$text": {"$search": query}},  # Text search on the `text` field
+        {"score": {"$meta": "textScore"}, "episode_id": 1, "text": 1, "timecode": 1}  # Include the score, episode_id, text, and timecode
+    ).sort([("score", {"$meta": "textScore"})])  # Sort by textScore
 
-  # Process each result to extract relevant text snippet
-  results_with_snippets = []
-  for result in search_results:
-    transcript = result.get("transcript", "")
+    # Process each result to extract relevant text snippet
+    results_with_snippets = []
+    for result in search_results:
+        transcript_text = result.get("text", "")
+        query_terms = query.split()
 
-    # Find the first occurrence of any query term in the transcript
-    query_terms = query.split()
-    snippet_start = min((transcript.find(term) for term in query_terms if transcript.find(term) != -1), default=0)
+        # Find the first occurrence of any query term in the transcript
+        snippet_start = min((transcript_text.find(term) for term in query_terms if transcript_text.find(term) != -1), default=0)
 
-    # Extract 200 characters around the first found term
-    start = max(0, snippet_start - 100)  # Start 100 chars before the found term
-    end = start + 200  # Extract 200 characters
+        # Extract 200 characters around the first found term
+        start = max(0, snippet_start - 100)  # Start 100 chars before the found term
+        end = start + 200  # Extract 200 characters
 
-    snippet = transcript[start:end] + "..." if len(transcript) > end else transcript[start:]
-    highlighted_snippet = highlight_terms(snippet, query_terms)
+        snippet = transcript_text[start:end] + "..." if len(transcript_text) > end else transcript_text[start:]
+        highlighted_snippet = highlight_terms(snippet, query_terms)
 
-    # Append result with the snippet
-    result["snippet"] = highlighted_snippet
-    results_with_snippets.append(result)
+        # Fetch the corresponding episode details using episode_id
+        episode = mongo.db.episodes.find_one({"_id": result["episode_id"]}, {"title": 1, "episode_id": 1})
 
-  return results_with_snippets
+        # Append result with the snippet and episode title
+        result_with_snippet = {
+            "episode_id": episode.get("episode_id", -1),
+            "timecode": result["timecode"],
+            "snippet": highlighted_snippet,
+            "episode_title": episode.get("title", "Unknown Title")
+        }
+        results_with_snippets.append(result_with_snippet)
 
+    return results_with_snippets
 
 # Function to fetch trend data
 def get_trend_data():

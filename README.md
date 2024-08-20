@@ -20,21 +20,22 @@ done
 
 ## TODO
 - [x] use small LM to translate China Chinese to Taiwan Chinese -> OpenCC
+- [ ] missing transcritps of episode 4-9, 27, 50-99, 223
 
 ### Single episode
 - [ ] main topic
 - [ ] topic tags (main topic + subtopics, like Gaole, 體檢)
-- [ ] timecode of certain discussion
+- [x] timecode of certain discussion
 - [ ] Full text search
 - [ ] Word Cloud (?
 
 ### Cross episode
 - [ ] reocurring topics (國小作文100題、排泄)
-- [x] Full text search -> mongodb text search
+- [x] Full text search -> ckiptagger + mongodb text search
 - [ ] Trend / Topic of Year
 - [ ] Word Cloud (?
 - [ ] What do to on multiple episodes
-- [ ] NER to recognize podcaster and their pets? 
+- [ ] NER to recognize podcaster and their pets?
 
 ### General Improvement
 - [ ] Build feedback pipeline (timecode, tags)

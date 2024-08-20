@@ -1,20 +1,41 @@
 {% extends "base.html" %}
 
-{% block title %}Timecodes for Episode {{ episode_id }}{% endblock %}
+{% block title %}Timecodes for {{ episode_title }}{% endblock %}
 
 {% block content %}
-<h1>Timecodes for Episode {{ episode_id }}</h1>
+<h1>Timecodes for {{ episode_title }}</h1>
 
 {% if timecodes %}
-<ul>
-    {% for timecode in timecodes %}
-    <li>
-        <strong>{{ timecode.time }}</strong>: {{ timecode.text }} (Tag: {{ timecode.tag }})
-    </li>
-    {% endfor %}
-</ul>
+<table>
+    <thead>
+        <tr>
+            <th>Timecode</th>
+            <th>Text</th>
+            <th>Topics</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for timecode in timecodes %}
+        <tr id="{{ timecode.timecode | replace(':', '-') }}">
+            <td>
+                <a href="#{{ timecode.timecode | replace(':', '-') }}">
+                    {{ timecode.timecode }}
+                </a>
+            </td>
+            <td>{{ timecode.text }}</td>
+            <td>
+                {% if timecode.topics %}
+                    {{ timecode.topics | join(', ') }}
+                {% else %}
+                    No topics
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% else %}
-<p>Timecodes data is not available yet. Placeholder for now.</p>
+<p>No timecodes data is available yet.</p>
 {% endif %}
 {% endblock %}
 
