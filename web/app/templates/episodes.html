@@ -4,12 +4,24 @@
 
 {% block content %}
 <h1>Episodes</h1>
-<ul>
-    {% for episode in episodes %}
-    <li>
-        <a href="{{ url_for('topics', episode_number=episode.episode_number) }}">{{ episode.title }}</a>
-    </li>
-    {% endfor %}
-</ul>
+<table>
+    <thead>
+        <tr>
+            <th>Episode Title</th>
+            <th>Keywords</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for episode in episodes %}
+        <tr>
+            <td>
+                <a href="{{ url_for('topics', episode_number=episode.episode_number) }}">{{ episode.title }}</a>
+            </td>
+            <td>
+                <span>{{ episode.keywords | join(', ') }}</span>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 {% endblock %}
 
