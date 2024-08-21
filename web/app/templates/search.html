@@ -41,10 +41,10 @@
         {% for result in results %}
         <tr>
             <td>
-                <a href="{{ url_for('timecode', episode_number=result.episode_number) }}">{{ result.episode_title }}</a>
+                <a href="{{ url_for('timecode', episode_number_part=result.episode_number ~ ('_' ~ result.episode_part if result.episode_part else '')) }}">{{ result.episode_title }}</a>
             </td>
             <td>
-                <a href="{{ url_for('timecode', episode_number=result.episode_number) }}#{{ result.timecode | replace(':', '-') }}">{{ result.timecode }}</a>
+                <a href="{{ url_for('timecode', episode_number_part=result.episode_number ~ ('_' ~ result.episode_part if result.episode_part else '')) }}#{{ result.timecode | replace(':', '-') }}">{{ result.timecode }}</a>
             </td>
             <td>
                 <small>{{ result.snippet|safe }}</small>

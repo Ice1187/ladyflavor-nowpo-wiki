@@ -1,6 +1,7 @@
 from flask import render_template, request
 from app import app, mongo, ws
 from app.models import get_topics_by_episode, get_episode_by_number, search_transcripts, get_trend_data
+import re
 
 # Home route to list all episodes
 @app.route('/')
@@ -16,14 +17,18 @@ def topics(episode_number):
     return render_template('topics.html', topics=episode_topics, episode_number=episode_number)
 
 # Route for displaying timecodes and tags for a specific episode
-@app.route('/timecode/<int:episode_number>')
-def timecode(episode_number):
-    episode = get_episode_by_number(episode_number)
-    if episode:
-        timecodes = episode.get("transcript", [])
-        return render_template('timecode.html', timecodes=timecodes, episode_title=episode.get('title'), episode_number=episode_number)
-    else:
-        return render_template('timecode.html', timecodes=[], episode_title="Unknown Episode", episode_number=episode_number)
+@app.route('/timecode/<string:episode_number_part>')
+def timecode(episode_number_part):
+    result = re.match(r'(\d+)(?:_(\d+))?', episode_number_part)
+    if result:
+      episode_number = int(result.group(1))
+      episode_part = int(result.group(2)) if result.group(2) else None
+      episode = get_episode_by_number(episode_number, episode_part=episode_part)
+      if episode:
+          timecodes = episode.get("transcript", [])
+          return render_template('timecode.html', timecodes=timecodes, episode_title=episode.get('title'))
+
+    return render_template('timecode.html', timecodes=[], episode_title="Unknown Episode")
 
 # Route for full-text search
 @app.route('/search', methods=['GET', 'POST'])
@@ -38,10 +43,6 @@ def search():
         episode_id = request.form.get('episode_id')
 
         tokenized_query = ' '.join(ws([query])[0])
-
-        with open('/tmp/aaa', 'w') as f:
-          f.write(f'num: {episode_number}\n id: {episode_id}\n')
-
         # Handle the episode number or ID filter
         if episode_number:
             search_results = list(search_transcripts(tokenized_query, episode_number=int(episode_number)))

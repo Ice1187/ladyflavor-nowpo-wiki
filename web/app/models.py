@@ -10,9 +10,9 @@ def get_topics_by_episode(episode_number):
   return []
 
 # Function to fetch episode by episode number
-def get_episode_by_number(episode_number):
+def get_episode_by_number(episode_number, episode_part=None):
     try:
-        episode = mongo.db.episodes.find_one({"episode_number": episode_number})
+        episode = mongo.db.episodes.find_one({"episode_number": episode_number, 'episode_part': episode_part})
         return episode
     except Exception as e:
         print(f"Error fetching episode: {e}")
@@ -62,11 +62,14 @@ def search_transcripts(query, episode_number=None, episode_id=None):
         highlighted_snippet = highlight_terms(snippet, query_terms)
 
         # Fetch episode details using episode_id
-        episode = mongo.db.episodes.find_one({"_id": result["episode_id"]}, {"episode_number":1, "title": 1})
+        episode = mongo.db.episodes.find_one(
+            {"_id": result["episode_id"]},
+            {"title": 1, "episode_number":1, 'episode_part': 1})
 
         # Append result with the snippet and episode title
         result_with_snippet = {
             "episode_number": episode.get("episode_number", -1),
+            "episode_part": episode.get("episode_part", None),
             "timecode": result["timecode"],
             "snippet": highlighted_snippet,
             "episode_title": episode.get("title", "Unknown Title")
@@ -74,43 +77,6 @@ def search_transcripts(query, episode_number=None, episode_id=None):
         results_with_snippets.append(result_with_snippet)
 
     return results_with_snippets
-
-#def search_transcripts(query):
-#    # Perform text search on the search_index collection
-#    search_results = mongo.db.search_index.find(
-#        {"$text": {"$search": query}},  # Text search on the `text` field
-#        {"score": {"$meta": "textScore"}, "episode_id": 1, "text": 1, "timecode": 1}  # Include the score, episode_id, text, and timecode
-#    ).sort([("score", {"$meta": "textScore"})])  # Sort by textScore
-#
-#    # Process each result to extract relevant text snippet
-#    results_with_snippets = []
-#    for result in search_results:
-#        transcript_text = result.get("text", "")
-#        query_terms = query.split()
-#
-#        # Find the first occurrence of any query term in the transcript
-#        snippet_start = min((transcript_text.find(term) for term in query_terms if transcript_text.find(term) != -1), default=0)
-#
-#        # Extract 200 characters around the first found term
-#        start = max(0, snippet_start - 100)  # Start 100 chars before the found term
-#        end = start + 200  # Extract 200 characters
-#
-#        snippet = transcript_text[start:end] + "..." if len(transcript_text) > end else transcript_text[start:]
-#        highlighted_snippet = highlight_terms(snippet, query_terms)
-#
-#        # Fetch the corresponding episode details using episode_id
-#        episode = mongo.db.episodes.find_one({"_id": result["episode_id"]}, {"title": 1, "episode_id": 1})
-#
-#        # Append result with the snippet and episode title
-#        result_with_snippet = {
-#            "episode_id": episode.get("episode_id", -1),
-#            "timecode": result["timecode"],
-#            "snippet": highlighted_snippet,
-#            "episode_title": episode.get("title", "Unknown Title")
-#        }
-#        results_with_snippets.append(result_with_snippet)
-#
-#    return results_with_snippets
 
 # Function to fetch trend data
 def get_trend_data():

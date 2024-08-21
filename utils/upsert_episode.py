@@ -17,7 +17,10 @@ def upsert_episodes_data(episodes_list):
     for episode_data in episodes_list:
         # Upsert based on episode_number
         result = episodes_collection.update_one(
-            {"episode_number": episode_data["episode_number"]},  # Query by episode_number
+            {
+                "episode_number": episode_data["episode_number"],
+                "episode_part": episode_data['episode_part']
+            },  # Query by episode_number
             {"$set": episode_data},  # Set the episode data
             upsert=True  # Insert if it does not exist
         )
@@ -28,7 +31,7 @@ def upsert_episodes_data(episodes_list):
 def upsert_search_index_data(episode_data):
     bulk_ops = []
     episode = episodes_collection.find_one(
-        {"episode_number": episode_data["episode_number"]},
+        {"episode_number": episode_data["episode_number"], "episode_part": episode_data['episode_part']},
         {"_id": 1, "episode_number": 1}
     )
 
