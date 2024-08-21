@@ -8,7 +8,8 @@ import re
 def episodes():
     # Fetch all episodes, only selecting necessary fields
     all_episodes = mongo.db.episodes.find({}, {"episode_number": 1, "title": 1, "topics": 1})
-    return render_template('episodes.html', episodes=all_episodes)
+    sorted_episodes = sorted(all_episodes, key=lambda x: x['episode_number'])
+    return render_template('episodes.html', episodes=sorted_episodes)
 
 # Route for displaying topics discussed in an episode
 @app.route('/topics/<episode_number>')
@@ -34,7 +35,8 @@ def timecode(episode_number_part):
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     # Fetch all episodes for the dropdown
-    all_episodes = list(mongo.db.episodes.find({}, {"_id": 1, "title": 1}))
+    all_episodes = list(mongo.db.episodes.find({}, {"_id": 1, "title": 1, 'episode_number': 1}))
+    sorted_episodes = sorted(all_episodes, key=lambda x: x['episode_number'])
     
     search_results = []
     if request.method == 'POST':
@@ -52,7 +54,7 @@ def search():
             # Perform the full-text search without any episode filtering
             search_results = list(search_transcripts(tokenized_query))
 
-    return render_template('search.html', results=search_results, episodes=all_episodes)
+    return render_template('search.html', results=search_results, episodes=sorted_episodes)
 
 # Route for displaying trends and analysis
 @app.route('/trend')
