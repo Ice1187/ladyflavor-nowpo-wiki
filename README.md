@@ -13,29 +13,40 @@ done
 ```
 
 ## Might Be Useful
-- [Dcard 好味小姐版](https://www.dcard.tw/f/ladyflavor)
-- [好味Podcast timecode](https://docs.google.com/document/d/1OcOFIrW8E7Olt6hkEBPtNTOhgYOEMorK3e8iquSp01Q/edit#heading=h.ci4rwf2rz0jf)
-- [腦波弱頻道 影片timecode](https://docs.google.com/document/d/1I0l976mZZqDftVVj7Xm8sxN0kL3PoY7k8ELVoEgAbEc/edit)
-- 據說有粉絲整理的逐字稿?
+- NLP Research
+  - [中文詞彙網路 by LOPE @ NTU](https://lopentu.github.io/CwnWeb/)
+  - [NER by CKIP Lab @ sinica](https://ckip.iis.sinica.edu.tw/project/ner)
+- Lady Flavor Fans
+  - [Dcard 好味小姐版](https://www.dcard.tw/f/ladyflavor)
+  - [好味Podcast timecode](https://docs.google.com/document/d/1OcOFIrW8E7Olt6hkEBPtNTOhgYOEMorK3e8iquSp01Q/edit#heading=h.ci4rwf2rz0jf)
+  - [腦波弱頻道 影片timecode](https://docs.google.com/document/d/1I0l976mZZqDftVVj7Xm8sxN0kL3PoY7k8ELVoEgAbEc/edit)
+  - 據說有粉絲整理的逐字稿?
 
 ## TODO
 - [x] use small LM to translate China Chinese to Taiwan Chinese -> OpenCC
 - [ ] missing transcritps of episode 4-9, 27, 50-99, 223
-- [ ] there are episodes `60_1` and `60_2`, fuck
+- [x] there are episodes `60_1` and `60_2`, fuck
 
 ### Single episode
 - [ ] main topic
 - [ ] topic tags (main topic + subtopics, like Gaole, 體檢)
 - [x] timecode of certain discussion
-- [ ] Full text search
-- [ ] Word Cloud (?
+- [x] Full text search
+- [ ] Word Cloud
 
 ### Cross episode
 - [ ] reocurring topics (國小作文100題、排泄)
 - [x] Full text search -> ckiptagger + mongodb text search
 - [ ] Trend / Topic of Year
-- [ ] Word Cloud (?
-- [ ] What do to on multiple episodes
+- [ ] Word Cloud
+- [ ] Guess episode by keywords
+  ```
+  Top 5 keywords in episode 1: 面試, 公司, 工作, 問題, 設計
+  Top 5 keywords in episode 2: 蜈蚣, 蟑螂, 馬路, 壁虎, 尾巴
+  Top 5 keywords in episode 3: 牙刷, 牙齒, 刷牙, 舞龍, 舞獅
+  Top 5 keywords in episode 4: 遊戲, crush, candy, 抽到, 角色
+  Top 5 keywords in episode 5: 上廁所, 大便, 褲子, 衣服, 便秘
+  ```
 - [ ] NER to recognize podcaster and their pets?
 
 ### General Improvement

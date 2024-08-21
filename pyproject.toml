@@ -21,6 +21,8 @@ gdown = "^5.2.0"
 ckiptagger = "^0.2.1"
 opencc = "^1.1.9"
 webvtt-py = "^0.5.1"
+scikit-learn = "^1.5.1"
+gensim = "^4.3.3"
 
 
 [build-system]
