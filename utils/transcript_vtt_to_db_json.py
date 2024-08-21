@@ -15,7 +15,7 @@ def main():
   transcript_files = argv[1:]
 
   ws = get_ws_model('./ckiptagger/data')
-  s2tw_converter = opencc.OpenCC('s2tw.json')
+  #s2tw_converter = opencc.OpenCC('s2tw.json')
   output = []
   for transcript_file in transcript_files:
     if not transcript_file.endswith('.vtt'):
@@ -35,8 +35,8 @@ def main():
     texts = []
     for caption in captions:
       timecodes.append(caption.start[:-4])  # remove the floating parts of second
-      text = s2tw_converter.convert(caption.text.strip())
-      texts.append(text)
+      #text = s2tw_converter.convert(caption.text.strip())
+      texts.append(caption.text.strip())
     tokenized_texts = tokenize_sentences(texts, ws)
 
     output.append({
