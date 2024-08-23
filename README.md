@@ -33,6 +33,8 @@ done
 - [x] timecode of certain discussion
 - [x] Full text search
 - [ ] Word Cloud
+- [x] Find significant sentence of a episode
+    Rank sentences based on the sum of TF-IDF scores of the words they contain. Then select the top-ranked sentences to form the summary.
 
 ### Cross episode
 - [ ] reocurring topics (國小作文100題、排泄)
@@ -47,7 +49,10 @@ done
   Top 5 keywords in episode 4: 遊戲, crush, candy, 抽到, 角色
   Top 5 keywords in episode 5: 上廁所, 大便, 褲子, 衣服, 便秘
   ```
-- [ ] NER to recognize podcaster and their pets?
+- [ ] NER to recognize podcaster, pets, and other important entities
+    - [ ] pretrained NER model + labeled custom data, finetune NER model
+- [ ] Build a Knowledge Graph of the podcast (noun node, relation edge)
+- [ ] Build a RAG to answer questions about the podcast
 
 ### General Improvement
 - [ ] Build feedback pipeline (timecode, tags)

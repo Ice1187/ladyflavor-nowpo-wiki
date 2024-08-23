@@ -23,6 +23,7 @@ opencc = "^1.1.9"
 webvtt-py = "^0.5.1"
 scikit-learn = "^1.5.1"
 gensim = "^4.3.3"
+numpy = "<2.0"
 
 
 [build-system]
