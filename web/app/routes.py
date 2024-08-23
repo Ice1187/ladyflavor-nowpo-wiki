@@ -7,7 +7,7 @@ import re
 @app.route('/')
 def episodes():
     # Fetch all episodes, only selecting necessary fields
-    all_episodes = mongo.db.episodes.find({}, {"episode_number": 1, "title": 1, "keywords": 1})
+    all_episodes = mongo.db.episodes.find({}, {"episode_number": 1, "episode_part": 1, "title": 1, "keywords": 1})
     sorted_episodes = sorted(all_episodes, key=lambda x: x['episode_number'])
     return render_template('episodes.html', episodes=sorted_episodes)
 

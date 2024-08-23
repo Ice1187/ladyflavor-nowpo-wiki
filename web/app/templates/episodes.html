@@ -15,7 +15,7 @@
         {% for episode in episodes %}
         <tr>
             <td>
-                <a href="{{ url_for('topics', episode_number=episode.episode_number) }}">{{ episode.title }}</a>
+                <a href="{{ url_for('timecode', episode_number_part=episode.episode_number ~ ('_' ~ episode.episode_part if episode.episode_part else '')) }}">{{ episode.title }}</a>
             </td>
             <td>
                 <span>{{ episode.keywords | join(', ') }}</span>
