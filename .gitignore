@@ -10,3 +10,15 @@ utils/episodes.json
 **/.ipynb_checkpoints
 
 **/.DS_Store
+
+# -------- frontend --------
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Local environment files
+.env
+.env.local
