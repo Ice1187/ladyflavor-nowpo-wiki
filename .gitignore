@@ -2,6 +2,7 @@ audios/*
 archive/
 utils/ckiptagger
 utils/episodes.json
+web/mongodb_data
 
 **/__pycache__
 **/.ipynb_checkpoints
