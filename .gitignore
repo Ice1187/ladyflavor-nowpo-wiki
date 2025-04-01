@@ -1,3 +1,6 @@
+uv.lock
+.python-version
+
 audios/*
 archive/
 utils/ckiptagger
