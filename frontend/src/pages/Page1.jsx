@@ -63,7 +63,7 @@ const Page1 = () => {
                   {groupedData[category].map(item => (
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {item.episode}
+                        EP{item.episode}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {item.question}
@@ -100,7 +100,7 @@ const Page1 = () => {
                 {groupedData[activeCategory].map(item => (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {item.episode}
+                      EP{item.episode}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {item.question}
