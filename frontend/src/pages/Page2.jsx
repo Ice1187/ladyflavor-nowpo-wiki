@@ -1,21 +1,39 @@
+import { useState } from 'react';
+import Sidebar from '../components/Sidebar';
+import EpisodePanel from '../components/EpisodePanel';
+import TimelinePanel from '../components/TimelinePanel';
+import { episodes } from '../../../data/episodes';
+import { timecodes } from '../../../data/timecodes';
+
 function Page2() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedEpisodeId, setSelectedEpisodeId] = useState(episodes[0].id);
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
   return (
-    <div className="bg-primary p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-secondary-dark mb-4">Podcast Timecode</h2>
-      <p className="text-secondary-dark">
-        This is the content of page 1. You can modify this text in the Page1.jsx file.
-      </p>
-      <div className="mt-4 p-4 bg-primary-light rounded-md border border-secondary-light">
-        <h3 className="text-lg font-semibold text-secondary-dark mb-2">Features</h3>
-        <ul className="list-disc list-inside text-secondary">
-          <li>React with Vite for fast development</li>
-          <li>Tailwind CSS for easy styling</li>
-          <li>Custom wheat and brown theme</li>
-          <li>Simple navigation between pages</li>
-        </ul>
+    <div className="flex h-screen">
+      {/* Sidebar */}
+      <Sidebar
+        episodes={episodes}
+        isOpen={sidebarOpen}
+        onToggle={toggleSidebar}
+        selectedEpisodeId={selectedEpisodeId}
+        onSelectEpisode={setSelectedEpisodeId}
+      />
+
+      {/* Main Content */}
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        <EpisodePanel
+          episode={episodes.find(ep => ep.id === selectedEpisodeId)}
+          timecodes={timecodes[selectedEpisodeId] || []}
+        />
+        <TimelinePanel
+          timecodes={timecodes[selectedEpisodeId] || []}
+        />
       </div>
     </div>
-  )
+  );
 }
 
-export default Page2
+export default Page2;
