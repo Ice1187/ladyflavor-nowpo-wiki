@@ -21,11 +21,11 @@ function Sidebar({ episodes, isOpen, onToggle, selectedEpisodeId, onSelectEpisod
           >
             {isOpen ? (
               <div>
-                <div className="font-bold">EP{episode.episode}</div>
+                <div className="font-bold">{episode.episode} - {episode.title.length > 10 ? `${episode.title.substring(0, 10)}...` : episode.title}</div>
                 <div className="text-sm text-gray-500">{episode.date}</div>
               </div>
             ) : (
-              <div className="text-center">{episode.id}</div>
+              <div className="text-center">EP{episode.id}</div>
             )}
           </div>
         ))}

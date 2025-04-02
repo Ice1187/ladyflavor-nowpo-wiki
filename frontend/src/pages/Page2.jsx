@@ -26,7 +26,6 @@ function Page2() {
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         <EpisodePanel
           episode={episodes.find(ep => ep.id === selectedEpisodeId)}
-          timecodes={timecodes[selectedEpisodeId] || []}
         />
         <TimelinePanel
           timecodes={timecodes[selectedEpisodeId] || []}
