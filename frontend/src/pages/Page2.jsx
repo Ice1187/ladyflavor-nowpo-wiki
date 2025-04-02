@@ -1,21 +1,18 @@
 function Page2() {
   return (
     <div className="bg-primary p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-secondary-dark mb-4">Welcome to Page 2</h2>
-      <p className="text-secondary-dark mb-4">
-        This is the content of page 2. You can modify this text in the Page2.jsx file.
+      <h2 className="text-2xl font-bold text-secondary-dark mb-4">Podcast Timecode</h2>
+      <p className="text-secondary-dark">
+        This is the content of page 1. You can modify this text in the Page1.jsx file.
       </p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div className="bg-primary-dark p-4 rounded-md shadow">
-          <h3 className="text-lg font-semibold text-secondary-dark">Card Title 1</h3>
-          <p className="text-secondary">This is a sample card with some content.</p>
-        </div>
-        
-        <div className="bg-primary-dark p-4 rounded-md shadow">
-          <h3 className="text-lg font-semibold text-secondary-dark">Card Title 2</h3>
-          <p className="text-secondary">Another sample card with different content.</p>
-        </div>
+      <div className="mt-4 p-4 bg-primary-light rounded-md border border-secondary-light">
+        <h3 className="text-lg font-semibold text-secondary-dark mb-2">Features</h3>
+        <ul className="list-disc list-inside text-secondary">
+          <li>React with Vite for fast development</li>
+          <li>Tailwind CSS for easy styling</li>
+          <li>Custom wheat and brown theme</li>
+          <li>Simple navigation between pages</li>
+        </ul>
       </div>
     </div>
   )
