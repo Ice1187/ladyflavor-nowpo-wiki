@@ -1,6 +1,6 @@
 function Navbar({ currentPage, setCurrentPage }) {
   return (
-    <nav className="bg-primary w-full p-2 shadow-md">
+    <nav className="bg-primary w-full p-3 shadow-md">
       <div className="max-w-7xl mx-auto">
         <div className="container flex flex-row justify-start items-center space-x-4">
           <h1 className="text-secondary-dark text-2xl font-bold">好味腦波弱百科</h1>
