@@ -11,20 +11,20 @@ for line in lines[1:]:
     print('[!] Broken:', data)
     data.append('')
 
-  for i, (ep, question) in enumerate(zip(data[0::2], data[1::2])):
+  for cid, (ep, question) in enumerate(zip(data[0::2], data[1::2])):
     riddle = {
-      'id': ep,
+      'ep': ep,
       'question': question,
-      'category': categories[i]
+      'category': categories[cid]
     }
     riddles.append(riddle)
 
 #riddles = sorted(riddles, key=lambda x: int(x['id'][2:]))
 
-#print('export const riddles = [')
-#for riddle in riddles:
-#  id = riddle['id']
-#  question = riddle['question']
-#  category = riddle['category']
-#  print(f'  {{ id: "{id}", question: "{question}", category: "{category}", answer: ""}}')
-#print(']')
+print('export const riddles = [')
+for id_, riddle in enumerate(riddles):
+  ep = riddle['ep']
+  question = riddle['question']
+  category = riddle['category']
+  print(f'  {{ id: "{id_}", episode: "{ep}", question: "{question}", category: "{category}", answer: ""}},')
+print(']')

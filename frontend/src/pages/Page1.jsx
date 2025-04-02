@@ -12,16 +12,11 @@ const Page1 = () => {
   // Get unique categories
   const categories = ['all', ...new Set(riddles.map(item => item.category))];
 
-  // Filter data by active category
-  const filteredData = activeCategory === 'all'
-    ? data
-    : data.filter(item => item.category === activeCategory);
-
   // Group data by category for display
   const groupedData = {};
   categories.forEach(category => {
     if (category !== 'all') {
-      groupedData[category] = filteredData.filter(item => item.category === category);
+      groupedData[category] = data.filter(item => item.category === category);
     }
   });
 
@@ -68,7 +63,7 @@ const Page1 = () => {
                   {groupedData[category].map(item => (
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {item.id}
+                        {item.episode}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {item.question}
@@ -102,10 +97,10 @@ const Page1 = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredData.map(item => (
+                {groupedData[activeCategory].map(item => (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {item.id}
+                      {item.episode}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {item.question}
