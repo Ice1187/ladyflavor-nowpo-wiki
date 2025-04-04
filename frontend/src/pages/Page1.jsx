@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { riddles } from '../../../riddles/riddles';
+import { riddles } from '../../../data/riddles/riddles';
 
 const Page1 = () => {
   const [data, setData] = useState([]);
