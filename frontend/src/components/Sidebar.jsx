@@ -14,18 +14,17 @@ function Sidebar({ episodes, isOpen, onToggle, selectedEpisodeId, onSelectEpisod
       {/* Episode List */}
       <div className="overflow-y-auto h-full">
         {episodes.map(episode => (
-          <div 
+          <div
             key={episode.id}
             onClick={() => onSelectEpisode(episode.id)}
-            className={`p-4 cursor-pointer hover:bg-gray-100 ${selectedEpisodeId === episode.id ? 'bg-gray-200 font-bold' : ''}`}
+            className={`cursor-pointer hover:bg-gray-100 ${selectedEpisodeId === episode.id ? 'bg-gray-200 font-bold' : ''}`}
           >
             {isOpen ? (
-              <div>
+              <div className="p-4" >
                 <div>{episode.episode} - {episode.title.length > 10 ? `${episode.title.substring(0, 10)}...` : episode.title}</div>
-                <div className="text-sm text-gray-500">{episode.date}</div>
               </div>
             ) : (
-              <div className="text-center">EP{episode.id}</div>
+              <div className="px-2 py-4" >EP{episode.id}</div>
             )}
           </div>
         ))}
