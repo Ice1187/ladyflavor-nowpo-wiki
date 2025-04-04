@@ -21,7 +21,7 @@ const Page1 = () => {
   });
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4">
+    <div className="w-full max-w-7xl mx-auto p-4 h-full overflow-y-auto">
       {/* Category Tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
         {categories.map(category => (
