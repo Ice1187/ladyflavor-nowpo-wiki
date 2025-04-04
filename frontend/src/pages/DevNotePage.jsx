@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { Github } from 'lucide-react';
 import { devNotes } from "../../../dev-notes/devnotes";
 
 const DevNotePage = () => {
@@ -61,116 +62,6 @@ const DevNotePage = () => {
     document.body.style.overflow = 'auto'; // Re-enable scrolling
   };
   
-  // Function to render markdown-like content (simple version)
-  const renderContent = (content) => {
-    const lines = content.split('\n');
-    const result = [];
-
-    let inCodeBlock = false;
-    let codeContent = [];
-    // let codeBlockLanguage = '';
-
-    let inQuoteBlock = false;
-    let quoteContent = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-
-      // Handle code blocks
-      if (line.startsWith('```')) {
-        if (!inCodeBlock) {
-          // Start of code block
-          inCodeBlock = true;
-          // codeBlockLanguage = line.substring(3).trim();
-          codeContent = [];
-        } else {
-          // End of code block
-          inCodeBlock = false;
-          result.push(
-            <div key={`code-${i}`} className="my-4 rounded-md bg-gray-700 overflow-x-auto">
-              <pre className="p-4 text-white text-sm">
-                <code>{codeContent.join('\n')}</code>
-              </pre>
-            </div>
-          );
-        }
-        continue;
-      }
-
-      if (inCodeBlock) {
-        codeContent.push(line);
-        continue;
-      }
-
-      // Quote blocks
-      if (line.startsWith('> ')) {
-        inQuoteBlock = true;
-        quoteContent.push(line.substring(2));
-
-        // If this is the last line or the next line is not a quote, end the quote block
-        if (i === lines.length - 1 || !lines[i+1].startsWith('> ')) {
-          result.push(
-            <blockquote
-              key={`quote-${i}`}
-              className="border-l-4 border-secondary pl-4 py-2 my-2 bg-primary-light text-gray-700">
-              {quoteContent.map((quoteLine, j) => (
-                <p key={`quote-line-${j}`} className="my-1">{quoteLine}</p>
-              ))}
-            </blockquote>
-          );
-          inQuoteBlock = false;
-          quoteContent = [];
-        }
-        continue;
-      }
-
-      // If we were in a quote block but this line is not a quote, end the quote block
-      if (inQuoteBlock) {
-        result.push(
-          <blockquote
-            key={`quote-${i-1}`}
-            className="border-l-4 border-secondary pl-4 py-2 my-2 bg-primary-light text-gray-700">
-            {quoteContent.map((quoteLine, j) => (
-              <p key={`quote-line-${j}`} className="my-1">{quoteLine}</p>
-            ))}
-          </blockquote>
-        );
-        inQuoteBlock = false;
-        quoteContent = [];
-      }
-
-      // Headers
-      if (line.startsWith('# ')) {
-        result.push(<h1 key={i} className="text-2xl font-bold mt-4 mb-2">{line.substring(2)}</h1>);
-        continue;
-      }
-      if (line.startsWith('## ')) {
-        result.push(<h2 key={i} className="text-xl font-bold mt-3 mb-2">{line.substring(3)}</h2>);
-        continue;
-      }
-      if (line.startsWith('### ')) {
-        result.push(<h3 key={i} className="text-lg font-bold mt-3 mb-1">{line.substring(4)}</h3>);
-        continue;
-      }
-      
-      // List items
-      if (line.startsWith('- ')) {
-        result.push(<li key={i} className="ml-5 list-disc">{line.substring(2)}</li>);
-        continue;
-      }
-      
-      // Empty lines as spacing
-      if (line.trim() === '') {
-        result.push(<div key={i} className="h-2"></div>);
-        continue;
-      }
-      
-      // Regular text
-      result.push(<p key={i} className="my-1">{line}</p>);
-    };
-
-    return result;
-  };
   const markdownComponents = {
     h1: ({...props}) => (
       <h1 className="text-2xl font-bold mt-4 mb-2" {...props} />
@@ -227,7 +118,19 @@ const DevNotePage = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-secondary-dark mb-2">開發筆記</h1>
-          <p className="text-secondary">資深好味粉角的 murmur... </p>
+          <p className="text-secondary flex items-center">
+            <span>資深好味粉角的 murmur... </span>
+            <a
+              href="https://github.com/Ice1187/ladyflavor-nowpo-wiki"
+              className="inline-flex items-center ml-4"
+            >
+              <img
+                src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/github.svg" 
+                alt="GitHub" 
+                className="h-4 w-4"
+              />
+            </a>
+          </p>
         </div>
         
         {/* Search and Filter */}

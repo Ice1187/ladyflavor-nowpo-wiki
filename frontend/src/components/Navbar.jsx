@@ -33,7 +33,7 @@ function Navbar({ currentPage, setCurrentPage }) {
             }`}
             onClick={() => setCurrentPage('DevNotePage')}
           >
-            開發者筆記
+            開發筆記
           </button>
         </div>
       </div>
