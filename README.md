@@ -1,3 +1,4 @@
+# 好味腦波弱百科 Ladyflavor Nowpo Wiki
 
 ## Transcribing
 - openai-whisper model large

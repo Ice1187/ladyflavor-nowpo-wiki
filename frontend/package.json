@@ -2,7 +2,7 @@
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://ice1187.github.io/ladyflavor-podcast-analysis",
+  "homepage": "https://ice1187.github.io/ladyflavor-nowpo-wiki",
   "type": "module",
   "scripts": {
     "dev": "vite",
