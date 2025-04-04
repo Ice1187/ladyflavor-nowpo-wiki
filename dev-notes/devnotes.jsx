@@ -31,8 +31,8 @@ export const devNotes = [
     summary: '開始做這個 side project 的動機，以及感謝好味社群整理的詳細資料。',
     content: `# The Beginning: Why I Start This Project & Acknowledgments to the Community
 最初做這個專案的動機是因為當時在自學 NLP，想找個題目來練習刻學到的各種演算法，同時希望能更貼近實際應用時會遇到的情境，因此決定不使用現成的資料集，而是從蒐集資料開始從頭做起。因為平時很常聽好味 podcast ，所以就直接以此為目標。
-實際做下去才發現坑好多好大，資料集弄到一半，想說都整理了，好像可以搞個網頁，結果就花了一堆時間在 vibe coding 網頁 XD （發現自己真的是前端 + UI 苦手...）。
-希望可以盡快把網頁告一段落，然後回頭去整理逐字稿，重新繼續 NLP 的研究。
+
+實際做下去才發現坑好多好大，資料集弄到一半，想說都整理了，好像可以搞個網頁，結果就花了一堆時間在 vibe coding 網頁 XD （發現自己真的是前端 + UI 苦手...）。 希望可以盡快把網頁告一段落，然後回頭去整理逐字稿，重新繼續 NLP 的研究。
 
 最後，在此感謝陳亞（好味Line社群的熊熊）、Line 社群的我也想當一顆蕾夢、好味粉，和其他好味社群成員共同整理的[Podcast timecode 目錄](https://docs.google.com/document/d/1OcOFIrW8E7Olt6hkEBPtNTOhgYOEMorK3e8iquSp01Q)、[哼猜學堂](https://docs.google.com/spreadsheets/d/1jeXH7BUyFj5VFDdQL_HBApARkfpq5f1x1PA7l_TWKCg) Google 文件，此網站大多數的資料都是來自於此。當然，也要感謝好味三人組錄這麼好聽的 podcast。
 
