@@ -1,6 +1,6 @@
 import TimelineCard from './TimelineCard';
 
-function TimelinePanel({ timecodes }) {
+function TimelinePanel({ timecodes, onTimeClick }) {
   return (
     <div className="flex-1 md:flex-2 p-4 overflow-y-auto bg-gray-50 m-4 rounded-lg shadow-md">
       <h2 className="text-xl font-semibold mb-4">Timeline</h2>
@@ -11,6 +11,7 @@ function TimelinePanel({ timecodes }) {
             key={index}
             time={item.time}
             topic={item.topic}
+            onTimeClick={onTimeClick}
           />
         ))}
       </div>
