@@ -74,6 +74,14 @@ const DevNotePage = () => {
     p: ({...props}) => (
       <p className="my-1" {...props} />
     ),
+    a: ({...props}) => (
+      <a
+        className="text-blue-600 hover:text-blue-800 underline"
+        target="_blank"
+        rel="noopener noreferrer"
+        {...props}
+      />
+    ),
     li: ({...props}) => (
       <li className="ml-5" {...props} />
     ),

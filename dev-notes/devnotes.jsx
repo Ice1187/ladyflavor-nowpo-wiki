@@ -1,187 +1,6 @@
 export const devNotes = [
-/*
-  {
-    id: 1,
-    date: '2025-03-21',
-    tags: ['JavaScript', 'Promise'],
-    title: '非同步處理筆記',
-    summary: '處理 JavaScript 中的異步操作的最佳實踐',
-    content: `# 非同步處理最佳實踐
-
-## 使用 async/await
-\`\`\`javascript
-async function fetchData() {
-  try {
-    const response = await fetch('/api/data');
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    throw error;
-  }
-}
-\`\`\`
-
-## 錯誤處理
-- 使用 try/catch 捕獲錯誤
-- 考慮加入重試機制
-- 確保用戶收到適當的錯誤反饋
-
-## Promise 鏈與異常處理
-\`\`\`javascript
-fetchData()
-  .then(data => processData(data))
-  .then(result => displayResult(result))
-  .catch(error => handleError(error));
-\`\`\`
-
-## 並行請求
-使用 \`Promise.all()\` 同時執行多個異步操作：
-
-\`\`\`javascript
-const [users, posts, comments] = await Promise.all([
-  fetchUsers(),
-  fetchPosts(),
-  fetchComments()
-]);
-\`\`\`
-
-處理多個請求，但不需要等待所有請求完成：
-
-\`\`\`javascript
-const promises = urls.map(url => fetch(url).catch(e => e));
-const results = await Promise.allSettled(promises);
-\`\`\``,
-  },
   {
     id: 2,
-    date: '2025-03-18',
-    tags: ['React', '性能優化'],
-    title: 'React Hooks 優化',
-    summary: '使用 useMemo 和 useCallback 來優化渲染性能',
-    content: `# React Hooks 性能優化技巧
-
-## useMemo
-
-\`useMemo\` 可以記憶計算結果，避免不必要的重新計算：
-
-\`\`\`jsx
-// 不好的寫法 - 每次渲染都會重新計算
-const sortedItems = expensiveSort(items);
-
-// 好的寫法 - 只在 items 改變時重新計算
-const sortedItems = useMemo(() => {
-  return expensiveSort(items);
-}, [items]);
-\`\`\`
-
-## useCallback
-
-\`useCallback\` 可以記憶函數引用，避免子組件不必要的重新渲染：
-
-\`\`\`jsx
-// 不好的寫法 - 每次都創建新的函數引用
-const handleClick = () => {
-  console.log('Clicked!', itemId);
-};
-
-// 好的寫法 - 只在 itemId 改變時創建新的函數引用
-const handleClick = useCallback(() => {
-  console.log('Clicked!', itemId);
-}, [itemId]);
-\`\`\`
-
-## 減少不必要的狀態更新
-
-確保狀態更新是必要的：
-
-\`\`\`jsx
-// 不好的寫法 - 總是更新狀態
-function handleChange(newValue) {
-  setValue(newValue);
-}
-
-// 好的寫法 - 只在值真正變化時更新狀態
-function handleChange(newValue) {
-  if (newValue !== value) {
-    setValue(newValue);
-  }
-}
-\`\`\`
-
-## React.memo
-
-使用 \`React.memo\` 避免組件的不必要重新渲染：
-
-\`\`\`jsx
-const MyComponent = React.memo(function MyComponent(props) {
-  // 組件邏輯
-});
-\`\`\``,
-  },
-  {
-    id: 3,
-    date: '2025-03-12',
-    tags: ['CSS', 'Tailwind', '響應式'],
-    title: 'Tailwind 響應式設計',
-    summary: '使用 Tailwind 的斷點前綴來創建響應式界面',
-    content: `# Tailwind CSS 響應式設計指南
-
-## 響應式斷點
-
-Tailwind 提供了以下斷點前綴：
-
-- \`sm:\` - 小屏幕 (640px 及以上)
-- \`md:\` - 中等屏幕 (768px 及以上)
-- \`lg:\` - 大屏幕 (1024px 及以上)
-- \`xl:\` - 超大屏幕 (1280px 及以上)
-- \`2xl:\` - 特大屏幕 (1536px 及以上)
-
-## 示例
-
-### 響應式布局
-
-\`\`\`html
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-  <!-- 內容 -->
-</div>
-\`\`\`
-
-### 響應式字體大小
-
-\`\`\`html
-<h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl">
-  響應式標題
-</h1>
-\`\`\`
-
-### 響應式可見性
-
-\`\`\`html
-<div class="hidden md:block">
-  <!-- 在中等及更大的屏幕上顯示 -->
-</div>
-<div class="md:hidden">
-  <!-- 在中等及更大的屏幕上隱藏 -->
-</div>
-\`\`\`
-
-### 響應式間距
-
-\`\`\`html
-<div class="p-4 md:p-6 lg:p-8">
-  <!-- 內容 -->
-</div>
-\`\`\`
-
-## 最佳實踐
-
-1. 使用移動優先的方法：默認為移動設計，然後使用斷點擴展到更大的屏幕
-2. 避免過度使用斷點，保持設計的一致性
-3. 使用 Tailwind 的自定義斷點來匹配您的設計要求`,
-  }, */
-  {
-    id: 4,
     date: '2025-04-04',
     tags: ['資料清理'],
     title: 'Know Your Data: False Assumption on The Data Can Trip You',
@@ -203,5 +22,21 @@ Tailwind 提供了以下斷點前綴：
 
 ---- by 資深好味粉角 🧊
 `,
-  }
+  },
+  {
+    id: 1,
+    date: '2025-04-03',
+    tags: ['感謝'],
+    title: 'The Beginning: Why I Start This Project & Acknowledgments to the Community',
+    summary: '開始做這個 side project 的動機，以及感謝好味社群整理的詳細資料。',
+    content: `# The Beginning: Why I Start This Project & Acknowledgments to the Community
+最初做這個專案的動機是因為當時在自學 NLP，想找個題目來練習刻學到的各種演算法，同時希望能更貼近實際應用時會遇到的情境，因此決定不使用現成的資料集，而是從蒐集資料開始從頭做起。因為平時很常聽好味 podcast ，所以就直接以此為目標。
+實際做下去才發現坑好多好大，資料集弄到一半，想說都整理了，好像可以搞個網頁，結果就花了一堆時間在 vibe coding 網頁 XD （發現自己真的是前端 + UI 苦手...）。
+希望可以盡快把網頁告一段落，然後回頭去整理逐字稿，重新繼續 NLP 的研究。
+
+最後，在此感謝陳亞（好味Line社群的熊熊）、Line 社群的我也想當一顆蕾夢、好味粉，和其他好味社群成員共同整理的[Podcast timecode 目錄](https://docs.google.com/document/d/1OcOFIrW8E7Olt6hkEBPtNTOhgYOEMorK3e8iquSp01Q)、[哼猜學堂](https://docs.google.com/spreadsheets/d/1jeXH7BUyFj5VFDdQL_HBApARkfpq5f1x1PA7l_TWKCg) Google 文件，此網站大多數的資料都是來自於此。當然，也要感謝好味三人組錄這麼好聽的 podcast。
+
+---- by 資深好味粉角 🧊
+`,
+  },
 ];
