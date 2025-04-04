@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { riddles } from '../../../data/riddles/riddles';
 
-const Page1 = () => {
+const RiddlePage = () => {
   const [data, setData] = useState([]);
   const [activeCategory, setActiveCategory] = useState('all');
 
@@ -119,4 +119,4 @@ const Page1 = () => {
   );
 };
 
-export default Page1;
+export default RiddlePage;

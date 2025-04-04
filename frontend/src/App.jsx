@@ -1,22 +1,22 @@
 import { useState } from 'react'
 import Navbar from './components/Navbar'
-import Page1 from './pages/Page1'
-import Page2 from './pages/Page2'
+import TimecodePage from './pages/TimecodePage'
+import RiddlePage from './pages/RiddlePage'
 import DevNotePage from './pages/DevNotePage'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('page1')
+  const [currentPage, setCurrentPage] = useState('TimecodePage')
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'page1':
-        return <Page1 />
-      case 'page2':
-        return <Page2 />
+      case 'TimecodePage':
+        return <TimecodePage />
+      case 'RiddlePage':
+        return <RiddlePage />
       case 'DevNotePage':
         return <DevNotePage />
       default:
-        return <Page1 />
+        return <TimecodePage />
     }
   }
 

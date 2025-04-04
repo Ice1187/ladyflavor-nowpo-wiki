@@ -5,7 +5,7 @@ import TimelinePanel from '../components/TimelinePanel';
 import { episodes } from '../../../data/episodes';
 import { timecodes } from '../../../data/timecodes';
 
-function Page2() {
+function TimecodePage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedEpisodeId, setSelectedEpisodeId] = useState(episodes[0].id);
   const [selectedTimecode, setSelectedTimecode] = useState(0);
@@ -45,4 +45,4 @@ function Page2() {
   );
 }
 
-export default Page2;
+export default TimecodePage;

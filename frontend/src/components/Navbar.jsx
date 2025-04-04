@@ -6,24 +6,24 @@ function Navbar({ currentPage, setCurrentPage }) {
           <h1 className="text-secondary-dark text-2xl font-bold">好味腦波弱百科</h1>
           <button
             className={`px-3 py-2 rounded text-secondary-dark ${
-              currentPage === 'page1'
+              currentPage === 'TimecodePage'
                 ? 'bg-primary font-bold'
                 : 'hover:bg-secondary-dark hover:text-primary-light'
             }`}
-            onClick={() => setCurrentPage('page1')}
+            onClick={() => setCurrentPage('TimecodePage')}
           >
-            哼猜學堂
+            Podcast Timecode
           </button>
 
           <button
             className={`px-3 py-2 rounded text-secondary-dark ${
-              currentPage === 'page2'
+              currentPage === 'RiddlePage'
                 ? 'bg-primary font-bold'
                 : 'hover:bg-secondary-dark hover:text-primary-light'
             }`}
-            onClick={() => setCurrentPage('page2')}
+            onClick={() => setCurrentPage('RiddlePage')}
           >
-            Podcast Timecode
+            哼猜學堂
           </button>
           <button
             className={`px-3 py-2 rounded text-secondary-dark ${

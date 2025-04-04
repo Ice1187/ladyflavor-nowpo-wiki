@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Github } from 'lucide-react';
 import { devNotes } from "../../../dev-notes/devnotes";
 
 const DevNotePage = () => {
