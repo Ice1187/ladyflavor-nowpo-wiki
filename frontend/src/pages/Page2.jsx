@@ -12,7 +12,7 @@ function Page2() {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-full">
       {/* Sidebar */}
       <Sidebar
         episodes={episodes}
