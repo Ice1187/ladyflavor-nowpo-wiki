@@ -25,6 +25,16 @@ function Navbar({ currentPage, setCurrentPage }) {
           >
             Podcast Timecode
           </button>
+          <button
+            className={`px-3 py-2 rounded text-secondary-dark ${
+              currentPage === 'DevNotePage'
+                ? 'bg-primary font-bold'
+                : 'hover:bg-secondary-dark hover:text-primary-light'
+            }`}
+            onClick={() => setCurrentPage('DevNotePage')}
+          >
+            開發者筆記
+          </button>
         </div>
       </div>
     </nav>

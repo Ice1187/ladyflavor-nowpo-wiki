@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Navbar from './components/Navbar'
 import Page1 from './pages/Page1'
 import Page2 from './pages/Page2'
+import DevNotePage from './pages/DevNotePage'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('page1')
@@ -12,6 +13,8 @@ function App() {
         return <Page1 />
       case 'page2':
         return <Page2 />
+      case 'DevNotePage':
+        return <DevNotePage />
       default:
         return <Page1 />
     }
