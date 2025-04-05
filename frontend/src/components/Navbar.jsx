@@ -12,9 +12,8 @@ function Navbar({ currentPage, setCurrentPage }) {
             }`}
             onClick={() => setCurrentPage('TimecodePage')}
           >
-            Podcast Timecode
+            ⏳ Podcast Timecode
           </button>
-
           <button
             className={`px-3 py-2 rounded text-secondary-dark ${
               currentPage === 'RiddlePage'
@@ -23,7 +22,27 @@ function Navbar({ currentPage, setCurrentPage }) {
             }`}
             onClick={() => setCurrentPage('RiddlePage')}
           >
-            哼猜學堂
+            🤔 哼猜學堂
+          </button>
+          <button
+            className={`px-3 py-2 rounded text-secondary-dark ${
+              currentPage === 'PeeAwardPage'
+                ? 'bg-primary font-bold'
+                : 'hover:bg-secondary-dark hover:text-primary-light'
+            }`}
+            onClick={() => setCurrentPage('PeeAwardPage')}
+          >
+            💦 小解獎
+          </button>
+          <button
+            className={`px-3 py-2 rounded text-secondary-dark ${
+              currentPage === 'TranscriptPage'
+                ? 'bg-primary font-bold'
+                : 'hover:bg-secondary-dark hover:text-primary-light'
+            }`}
+            onClick={() => setCurrentPage('TranscriptPage')}
+          >
+            📝 逐字稿
           </button>
           <button
             className={`px-3 py-2 rounded text-secondary-dark ${
@@ -33,7 +52,7 @@ function Navbar({ currentPage, setCurrentPage }) {
             }`}
             onClick={() => setCurrentPage('DevNotePage')}
           >
-            開發筆記
+            👾 開發筆記
           </button>
         </div>
       </div>
