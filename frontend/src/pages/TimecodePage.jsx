@@ -31,7 +31,7 @@ function TimecodePage() {
       />
 
       {/* Main Content */}
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1">
         <EpisodePanel
           episode={episodes.find(ep => ep.id === selectedEpisodeId)}
           timecode={selectedTimecode}
