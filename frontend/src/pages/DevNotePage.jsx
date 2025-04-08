@@ -126,7 +126,7 @@ const DevNotePage = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-secondary-dark mb-2">開發筆記</h1>
           <p className="text-secondary flex items-center">
-            <span>資深好味粉角的 murmur... </span>
+            <span>深陷碩論地獄的好味粉角的 murmur... </span>
             <a
               href="https://github.com/Ice1187/ladyflavor-nowpo-wiki"
               className="inline-flex items-center ml-4"
