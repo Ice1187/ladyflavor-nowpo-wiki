@@ -131,6 +131,7 @@ const DevNotePage = () => {
             <a
               href="https://github.com/Ice1187/ladyflavor-nowpo-wiki"
               className="inline-flex items-center ml-4"
+              title="GitHub of this project"
             >
               <img
                 src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/github.svg" 
