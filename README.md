@@ -35,7 +35,7 @@
 ## Contact
 
 如對內容有任何問題或疑慮，歡迎開 issues 或透過以下方式聯絡我。
-* Email: `icing1187 [at] gmail.com`
+* Email: `hi [at] ice1187.com`
 * Twitter: [@ice1187](https://x.com/ice1187)
 
 ## Legal Disclaimer
