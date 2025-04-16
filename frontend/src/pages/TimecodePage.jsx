@@ -6,7 +6,7 @@ import { episodes } from '../../../data/episodes';
 import { timecodes } from '../../../data/timecodes';
 
 function TimecodePage() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedEpisodeId, setSelectedEpisodeId] = useState(episodes[0].id);
   const [selectedTimecode, setSelectedTimecode] = useState(0);
 
@@ -31,7 +31,7 @@ function TimecodePage() {
       />
 
       {/* Main Content */}
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1">
         <EpisodePanel
           episode={episodes.find(ep => ep.id === selectedEpisodeId)}
           timecode={selectedTimecode}

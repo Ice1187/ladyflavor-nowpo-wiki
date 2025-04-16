@@ -13,13 +13,13 @@ function EpisodePanel({ episode, timecode }) {
   const embedUrl = `${episode.embed_url}?utm_source=generator&t=${timecode}`;
 
   return (
-    <div className="flex-1 p-6 bg-white shadow-md m-4 rounded-lg">
+    <div className="flex-1 p-4 bg-white shadow-md m-3 rounded-lg flex flex-col">
       <h1 className="text-2xl font-bold mb-4">EP{episode.episode} - {episode.title}</h1>
       {/* Add more episode metadata here */}
-      <div className={`transition-all duration-500 ${isLoaded ? '' : 'opacity-50 blur-sm'}`}>
+      <div className={`transition-all duration-500 mb-4 ${isLoaded ? '' : 'opacity-50 blur-sm'}`}>
         <iframe
           src={embedUrl}
-          className="rounded-xl w-full"
+          className="rounded-xl w-full px-2"
           height="152"
           frameBorder="0"
           allowFullScreen=""

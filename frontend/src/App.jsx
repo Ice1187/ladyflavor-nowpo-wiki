@@ -2,6 +2,9 @@ import { useState } from 'react'
 import Navbar from './components/Navbar'
 import TimecodePage from './pages/TimecodePage'
 import RiddlePage from './pages/RiddlePage'
+import PeeAwardPage from './pages/PeeAwardPage'
+import TranscriptPage from './pages/TranscriptPage'
+import BirthdayPage from './pages/BirthdayPage'
 import DevNotePage from './pages/DevNotePage'
 
 function App() {
@@ -13,6 +16,12 @@ function App() {
         return <TimecodePage />
       case 'RiddlePage':
         return <RiddlePage />
+      case 'PeeAwardPage':
+        return <PeeAwardPage />
+      case 'TranscriptPage':
+        return <TranscriptPage />
+      case 'BirthdayPage':
+        return <BirthdayPage />
       case 'DevNotePage':
         return <DevNotePage />
       default:

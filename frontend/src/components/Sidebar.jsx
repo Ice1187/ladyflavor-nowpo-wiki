@@ -1,6 +1,6 @@
 function Sidebar({ episodes, isOpen, onToggle, selectedEpisodeId, onSelectEpisode }) {
   return (
-    <div className={`${isOpen ? 'w-64' : 'w-16'} transition-width duration-300 ease-in-out m-4 overflow-y-auto bg-white shadow-md rounded`}>
+    <div className={`${isOpen ? 'w-64' : 'w-16'} transition-width duration-300 ease-in-out m-3 overflow-y-auto bg-white shadow-md rounded`}>
       {/* Toggle Button */}
       <div className="p-4 border-b">
         <button 

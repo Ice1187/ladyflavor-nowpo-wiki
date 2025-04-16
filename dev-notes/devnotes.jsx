@@ -1,5 +1,17 @@
 export const devNotes = [
   {
+    id: 3,
+    date: '2025-04-08',
+    tags: ['Change Log'],
+    title: 'Change Log: 小解獎',
+    summary: '新增小解獎頁面。',
+    content: `# Change Log: 新增小解獎頁面
+小解獎的留言都是萬中挑一得好笑，好期待第二屆小解獎 🥺。
+
+---- by 好味粉角 🧊
+`,
+  },
+  {
     id: 2,
     date: '2025-04-04',
     tags: ['資料清理'],
@@ -20,7 +32,7 @@ export const devNotes = [
 
 最後把已經整理好的資料格式全部打掉，開獨立的 id 欄位，並把集數的型別從 Number 改成 String，網頁的 code 也是改了大半才處理好。**清理資料時，需要先檢查自己對資料的假設，驗證過後再開始寫應用，不然中途改資料格式真的超崩潰...。**
 
----- by 資深好味粉角 🧊
+---- by 好味粉角 🧊
 `,
   },
   {
@@ -36,7 +48,7 @@ export const devNotes = [
 
 最後，在此感謝陳亞（好味Line社群的熊熊）、Line 社群的我也想當一顆蕾夢、好味粉，和其他好味社群成員共同整理的[Podcast timecode 目錄](https://docs.google.com/document/d/1OcOFIrW8E7Olt6hkEBPtNTOhgYOEMorK3e8iquSp01Q)、[哼猜學堂](https://docs.google.com/spreadsheets/d/1jeXH7BUyFj5VFDdQL_HBApARkfpq5f1x1PA7l_TWKCg) Google 文件，此網站大多數的資料都是來自於此。當然，也要感謝好味三人組錄這麼好聽的 podcast。
 
----- by 資深好味粉角 🧊
+---- by 好味粉角 🧊
 `,
   },
 ];
