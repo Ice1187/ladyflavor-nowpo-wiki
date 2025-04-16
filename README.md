@@ -1,120 +1,44 @@
 # 好味腦波弱百科 Ladyflavor Nowpo Wiki
 
-## Transcribing
-- openai-whisper model large
-```bash
-for f in audios/*; do
-  output_file="transcripts/$(basename "${f%.*}.txt")"
-  if [ ! -f "$output_file" ]; then
-    whisper --model large --output_dir transcripts -f all --language zh --initial_prompt '嗨 大家好 歡迎來到好味小姐開束縛 我還你原型' --device cuda "$f"
-  else
-    echo "Skipping $f, corresponding transcript already exists."
-  fi
-done
-```
+不想寫碩論時順手刻的好味網站 by 深陷碩論地獄的好味粉角
 
-## Might Be Useful
-- NLP Research
-  - [中文詞彙網路 by LOPE @ NTU](https://lopentu.github.io/CwnWeb/)
-  - [NER by CKIP Lab @ sinica](https://ckip.iis.sinica.edu.tw/project/ner)
-- Lady Flavor Fans
-  - [Dcard 好味小姐版](https://www.dcard.tw/f/ladyflavor)
-  - [好味Podcast timecode](https://docs.google.com/document/d/1OcOFIrW8E7Olt6hkEBPtNTOhgYOEMorK3e8iquSp01Q/edit#heading=h.ci4rwf2rz0jf)
-  - [腦波弱頻道 影片timecode](https://docs.google.com/document/d/1I0l976mZZqDftVVj7Xm8sxN0kL3PoY7k8ELVoEgAbEc/edit)
-  - 據說有粉絲整理的逐字稿?
+## 功能 Features
 
-## TODO
-- [x] use small LM to translate China Chinese to Taiwan Chinese -> OpenCC
-- [ ] missing transcritps of episode 4-9, 27, 50-99, 223
-- [x] there are episodes `60_1` and `60_2`, fuck
+* Podcast Timecode：社群整理的 podcast timecode，並內建 Spotify，可以按 timecode 直接跳去回去想聽的段落。
+* 哼猜學堂：脆脆哼哼/猜猜/小學堂/看電影的問答表
+* 小解獎：小解獎入圍與得獎列表（同樣內建 Spotify 與 timecode）
+* 開發筆記
 
-### Single episode
-- [ ] main topic
-- [ ] topic tags (main topic + subtopics, like Gaole, 體檢)
-- [x] timecode of certain discussion
-- [x] Full text search
-- [ ] Word Cloud
-- [x] Find significant sentence of a episode
-    Rank sentences based on the sum of TF-IDF scores of the words they contain. Then select the top-ranked sentences to form the summary.
+## 預計新增功能 Roadmap
 
-### Cross episode
-- [ ] reocurring topics (國小作文100題、排泄)
-- [x] Full text search -> ckiptagger + mongodb text search
-- [ ] Trend / Topic of Year
-- [ ] Word Cloud
-- [ ] Guess episode by keywords
-  ```
-  Top 5 keywords in episode 1: 面試, 公司, 工作, 問題, 設計
-  Top 5 keywords in episode 2: 蜈蚣, 蟑螂, 馬路, 壁虎, 尾巴
-  Top 5 keywords in episode 3: 牙刷, 牙齒, 刷牙, 舞龍, 舞獅
-  Top 5 keywords in episode 4: 遊戲, crush, candy, 抽到, 角色
-  Top 5 keywords in episode 5: 上廁所, 大便, 褲子, 衣服, 便秘
-  ```
-- [ ] NER to recognize podcaster, pets, and other important entities
-    - [ ] pretrained NER model + labeled custom data, finetune NER model
-- [ ] Build a Knowledge Graph of the podcast (noun node, relation edge)
-- [ ] Build a RAG to answer questions about the podcast
+* [ ] 逐字稿
+* [ ] 生日統計
+* [ ] 各集 podcast 主題 / tag 分析
+* [ ] UI 改善
 
-### General Improvement
-- [ ] Build feedback pipeline (timecode, tags)
-- [ ] Guideline of providing feedback for non-technical audience, who don't know how to use GitHub
-- [ ] Mapping wrong words to correct words
-```
-好位小姐 -> 好味小姐
-開束服 -> 開束縛
-deco -> 短褲
-秋規 -> 秋葵
-蜜香 -> 米香
-碼碼 -> 媽媽
-翠翠   -> 脆脆
-崔崔   -> 脆脆
-陳翠安 -> 陳脆安
-陳春彩 -> 陳脆安
-陳川   -> 陳脆安
-陳彈   -> 陳脆安
-陳帥   -> 陳脆安
-宥偉帆 -> 尤葦帆
-宥帆   -> 尤葦帆
-游偉帆 -> 尤葦帆
-游蕙凡 -> 尤葦帆
-黃連夢 -> 黃蕾夢
-黃一夢 -> 黃蕾夢
-雷姆 -> 蕾夢
-孟孟 -> 夢夢
-氣婆 -> 氣泡
+## 資料來源 Content Sources
 
-# trivial
-找鳥 -> 早鳥
-暈喘 -> 暈船
-企鵝不舍 -> 鍥而不捨
-極幻式 -> 集換式
-麒麟王 -> 棋靈王
-遊戲網 -> 遊戲王
-傑克摩托 -> 傑克與魔豆
-惠本 -> 繪本
-```
+此網站的資料主要來自：
+* 陳亞（好味Line 社群的熊熊）、Line 社群的我也想當一顆蕾夢、好味粉，和其他好味社群成員共同整理的 [Podcast timecode 目錄](https://docs.google.com/document/d/1OcOFIrW8E7Olt6hkEBPtNTOhgYOEMorK3e8iquSp01Q/edit?tab=t.0#heading=h.ci4rwf2rz0jf) 和 [哼猜學堂](https://docs.google.com/spreadsheets/d/1jeXH7BUyFj5VFDdQL_HBApARkfpq5f1x1PA7l_TWKCg/edit?gid=0#gid=0) Google 文件
+* Podcast mp3 音檔下載自 [SoundOn](https://www.soundon.fm/)
 
-## 免責聲明與歸屬 / Disclaimer and Attribution
-本專案包含使用 OpenAI 的 Whisper 模型從好味小姐開束縛 podcast 生成的文字稿。請注意以下事項：
+## 參與貢獻 Contributing
 
-所有權：我並不擁有 podcast 內容或文字稿的所有權。Podcast 及其內容的所有權均屬於該節目的原創作者和主持人。
+此網站使用 React 和 Tailwind CSS 開發。我對前端、後端和 UI 開發都不熟，大部分東西都是 vibe coding 出來的，非常歡迎有興趣的人幫忙：
 
-用途：提供此文字稿僅為方便聽眾及 podcast 創作者使用。目的是為了支持那些偏好或需要文本格式的使用者能夠更容易地獲取節目內容。
+* 改善網頁設計風格和 UI/UX
+* 程式碼結構和效能優化
+* 無障礙功能
 
-非商業用途：此文字稿無意用於商業用途。它僅作為一種公開資源，旨在支持 podcast 內容的傳播。
+請直接開 issues 和發 PR 即可！
 
-內容準確性：此文字稿由自動化工具生成，可能包含錯誤或不準確之處。建議您參考原始 podcast 以獲取最準確的內容表達。
+## Contact
 
-如果您是此 podcast 創作者或權利持有人，對於公開此文字稿有任何疑慮，請聯絡我，我將盡快處理您的問題。
+如對內容有任何問題或疑慮，歡迎開 issues 或透過以下方式聯絡我。
+* Email: `icing1187 [at] gmail.com`
+* Twitter: [@ice1187](https://x.com/ice1187)
 
-This repository contains a transcript generated from the audio of 好味小姐開束縛 podcast using OpenAI's Whisper model. Please note the following:
+## Legal Disclaimer
 
-Ownership: I do not own the content of the podcast or the transcript. All rights to the podcast and its content are owned by the original creators and hosts of the podcast.
+This is a personal project that aggregates publicly available content for personal purposes. All rights to original content belong to their respective owners. This site operates under fair use principles and does not claim ownership of the aggregated materials.
 
-Purpose: The transcript is provided here solely for the convenience of the audience and the creators of the podcast. It is intended to facilitate access to the content for those who prefer or require a text-based format.
-
-No Commercial Use: This transcript is not intended for commercial use. It is made available as a public resource to support the dissemination of the podcast's content.
-
-Content Accuracy: The transcript was automatically generated and may contain errors or inaccuracies. It is recommended to refer to the original podcast audio for the most accurate representation of the content.
-
-If you are the creator or rights holder of the podcast and have any concerns about this transcript being publicly available, please contact me, and I will address your concerns promptly.
