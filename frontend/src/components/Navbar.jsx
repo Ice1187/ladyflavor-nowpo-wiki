@@ -12,6 +12,7 @@ function Navbar({ currentPage, setCurrentPage }) {
     { id: 'RiddlePage', label: '🤔 哼猜學堂' },
     { id: 'PeeAwardPage', label: '💦 小解獎' },
     { id: 'TranscriptPage', label: '📝 逐字稿' },
+    { id: 'BirthdayPage', label: '🎂 生日表' },
     { id: 'DevNotePage', label: '👾 開發筆記' },
   ];
 
