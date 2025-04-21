@@ -53,6 +53,8 @@ function TranscriptPage() {
   // Toggle sidebar
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
+
+
   // Effect to load transcript when episode changes
   useEffect(() => {
     if (!selectedEpisodeId) return;
@@ -203,23 +205,23 @@ function TranscriptPage() {
     let rawResults;
 
     try {
-      if (isSearchingAll) {
-        // Search across all indexed episodes
-        console.log('Searching all episodes');
-        rawResults = searchIndex.current.search(searchQuery, {
-          enrich: true,
-          limit: 50
-        });
-      } else if (selectedEpisodeId) {
-        // Search only in current episode
-        console.log('Searching only current episode:', selectedEpisodeId);
-        rawResults = searchIndex.current.search(searchQuery, {
-          enrich: true,
-          where: { episodeId: selectedEpisodeId },
-          limit: 50
-        });
+      // Searching all episodes
+      rawResults = searchIndex.current.search(searchQuery, {
+        enrich: true,
+        limit: 50
+      });
+      if (!isSearchingAll && selectedEpisodeId) {
+        // If we're not searching all episodes and have a selected episode, filter the results
+        console.log('Filtering to only current episode:', selectedEpisodeId);
+        rawResults = rawResults.map(category => ({
+          field: category.field,
+          result: category.result.filter(item =>
+            item.doc && item.doc.episodeId === selectedEpisodeId
+          )
+        })).filter(category => category.result.length > 0);
       }
 
+      console.log('selected Episode Id', selectedEpisodeId);
       console.log('Raw search results:', rawResults);
 
       // Update debug info
@@ -235,8 +237,8 @@ function TranscriptPage() {
             resultGroup.result.forEach(item => {
               // Make sure we have all the required fields
               if (item && typeof item === 'object') {
-                results.push(item);
-                console.log('Added result item:', item);
+                results.push(item.doc);
+                console.log('Added result item:', item.doc);
               }
             });
           }
@@ -287,10 +289,6 @@ function TranscriptPage() {
 
       {/* Main Content */}
       <div className="flex-1 p-4">
-        <h1 className="text-3xl font-bold mb-6 text-secondary-dark">
-          Podcast Transcripts
-        </h1>
-
         {/* Search bar */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4 mb-3">
@@ -456,42 +454,42 @@ function TranscriptPage() {
                         className="mb-4 p-3 border-b hover:bg-gray-50 cursor-pointer"
                         onClick={() => {
                           // If result is from a different episode, load that episode first
-                          if (result.doc.episodeId !== selectedEpisodeId) {
-                            setSelectedEpisodeId(result.doc.episodeId);
+                          if (result.episodeId !== selectedEpisodeId) {
+                            setSelectedEpisodeId(result.episodeId);
                           }
 
                           // Jump to the timestamp
-                          setTimeout(() => jumpToTimestamp(result.doc.start), 100);
+                          setTimeout(() => jumpToTimestamp(result.start), 100);
                         }}
                       >
                         <div className="flex justify-between mb-1">
                           <span className="text-primary-dark font-mono">
                             {/* Handle start time correctly */}
-                            {typeof result.doc.start === 'number'
-                              ? formatTime(result.doc.start)
+                            {typeof result.start === 'number'
+                              ? formatTime(result.start)
                               : 'Unknown time'}
                           </span>
                           <span className="text-sm text-secondary">
                             {/* Handle episode number correctly */}
-                            EP{result.doc.episode || '?'}
+                            EP{result.episode || '?'}
                           </span>
                         </div>
                         <div className="text-gray-700">
                           {/* Highlight search term in the result text */}
-                          {searchQuery && result.doc.text && result.doc.text.includes(searchQuery) ? (
+                          {searchQuery && result.text && result.text.includes(searchQuery) ? (
                             <span dangerouslySetInnerHTML={{
-                              __html: result.doc.text.replace(
+                              __html: result.text.replace(
                                 new RegExp(`(${searchQuery})`, 'gi'),
                                 '<mark class="bg-yellow-200">$1</mark>'
                               )
                             }} />
                           ) : (
-                            result.doc.text || ""
+                            result.text || ""
                           )}
                         </div>
-                        {result.doc.episodeId !== selectedEpisodeId && (
+                        {result.episodeId !== selectedEpisodeId && (
                           <div className="mt-1 text-xs text-gray-500 italic">
-                            {result.doc.title || ""}
+                            {result.title || ""}
                           </div>
                         )}
                       </div>
