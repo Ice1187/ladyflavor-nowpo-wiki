@@ -10,114 +10,6 @@ const logger = {
   warn: console.warn
 };
 
-// Custom hook for transcript search functionality
-function useTranscriptSearch() {
-  // Create search index with explicit Chinese config
-  const index = useRef(new Document({
-    document: {
-      id: 'id',
-      index: ['text'],
-      store: ['text', 'start', 'episodeId', 'episode', 'title']
-    },
-    tokenize: 'forward',
-    resolution: 9,
-    cache: 100,
-    context: true,
-    language: 'zh',
-    encoder: str => str.toLowerCase()
-  }));
-
-  // Add documents to the search index
-  const addToIndex = useCallback((documents) => {
-    if (!Array.isArray(documents)) return;
-
-    documents.forEach((doc, idx) => {
-      const id = `${doc.episodeId}-${idx}`;
-      index.current.add({
-        id,
-        text: doc.text,
-        start: doc.start,
-        episodeId: doc.episodeId,
-        episode: doc.episode,
-        title: doc.title
-      });
-    });
-
-    logger.log(`Indexed ${documents.length} entries for episode ${documents[0]?.episode || 'unknown'}`);
-  }, []);
-
-  // Search the index
-  const search = useCallback((query, options = {}) => {
-    if (!query.trim()) return [];
-
-    try {
-      const { episodeId, isSearchingAll = false, limit = 50 } = options;
-
-      const rawResults = index.current.search(query, {
-        enrich: true,
-        limit
-      });
-
-      // Process and filter results
-      const results = [];
-
-      rawResults.forEach(resultGroup => {
-        if (resultGroup.result && Array.isArray(resultGroup.result)) {
-          resultGroup.result.forEach(item => {
-            if (item && item.doc) {
-              // Only include results from current episode unless searching all
-              if (isSearchingAll || item.doc.episodeId === episodeId) {
-                results.push(item.doc);
-              }
-            }
-          });
-        }
-      });
-
-      return results;
-    } catch (err) {
-      logger.error('Search error:', err);
-      return [];
-    }
-  }, []);
-
-  return { addToIndex, search };
-}
-
-// Reducer for state management
-function transcriptReducer(state, action) {
-  switch (action.type) {
-    case 'SET_EPISODE':
-      return {
-        ...state,
-        selectedEpisodeId: action.payload,
-        currentTimecode: null,
-        searchResults: [],
-        error: null
-      };
-    case 'SET_TRANSCRIPT':
-      return { ...state, transcript: action.payload, isLoading: false };
-    case 'SET_LOADING':
-      return { ...state, isLoading: action.payload };
-    case 'SET_ERROR':
-      return { ...state, error: action.payload, isLoading: false };
-    case 'SET_SEARCH_QUERY':
-      return { ...state, searchQuery: action.payload };
-    case 'SET_SEARCH_RESULTS':
-      return { ...state, searchResults: action.payload };
-    case 'SET_SEARCHING_ALL':
-      return { ...state, isSearchingAll: action.payload };
-    case 'TOGGLE_SIDEBAR':
-      return { ...state, sidebarOpen: !state.sidebarOpen };
-    case 'SET_TIMECODE':
-      return { ...state, currentTimecode: action.payload };
-    case 'SET_SPOTIFY_LOADED':
-      return { ...state, isSpotifyLoaded: action.payload };
-    default:
-      return state;
-  }
-}
-
 // Utility functions
 const convertTimeToSeconds = (timeString) => {
   const [minutes, secondsMs] = timeString.split(':');
@@ -182,6 +74,49 @@ const parseVTT = (vttText, episodeId, episodeNumber, episodeTitle) => {
   return entries;
 };
 
+// Reducer for state management
+function transcriptReducer(state, action) {
+  switch (action.type) {
+    case 'SET_EPISODE':
+      return {
+        ...state,
+        selectedEpisodeId: action.payload,
+        currentTimecode: null,
+        searchResults: [],
+        error: null
+      };
+    case 'SET_TRANSCRIPT':
+      return { ...state, transcript: action.payload, isLoading: false };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload, isLoading: false };
+    case 'SET_SEARCH_QUERY':
+      return { ...state, searchQuery: action.payload };
+    case 'SET_SEARCH_RESULTS':
+      return { ...state, searchResults: action.payload };
+    case 'SET_SEARCHING_ALL':
+      return { ...state, isSearchingAll: action.payload };
+    case 'TOGGLE_SIDEBAR':
+      return { ...state, sidebarOpen: !state.sidebarOpen };
+    case 'SET_TIMECODE':
+      return { ...state, currentTimecode: action.payload };
+    case 'SET_SPOTIFY_LOADED':
+      return { ...state, isSpotifyLoaded: action.payload };
+    case 'SET_INDEXING_ALL':
+      return { ...state, isIndexingAll: action.payload };
+    case 'SET_INDEXING_MESSAGE':
+      return { ...state, indexingMessage: action.payload };
+    case 'ADD_INDEXED_EPISODE':
+      return {
+        ...state,
+        indexedEpisodes: new Set([...state.indexedEpisodes, action.payload])
+      };
+    default:
+      return state;
+  }
+}
+
 // Smaller components
 const HighlightedText = ({ text, searchTerm }) => {
   if (!searchTerm || !text || !text.includes(searchTerm)) {
@@ -198,7 +133,16 @@ const HighlightedText = ({ text, searchTerm }) => {
   );
 };
 
-const SearchBar = ({ query, onQueryChange, onSearch, isSearchingAll, onSearchingAllChange }) => {
+const SearchBar = ({
+  query,
+  onQueryChange,
+  onSearch,
+  isSearchingAll,
+  onSearchingAllChange,
+  isIndexingAll,
+  indexingMessage,
+  onIndexAll
+}) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-4 mb-6">
       <div className="flex flex-col md:flex-row gap-4 mb-3">
@@ -209,26 +153,44 @@ const SearchBar = ({ query, onQueryChange, onSearch, isSearchingAll, onSearching
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+          disabled={isIndexingAll}
         />
         <button
           className="bg-secondary hover:bg-secondary-dark text-white px-4 py-2 rounded-md transition-colors"
           onClick={onSearch}
+          disabled={isIndexingAll}
         >
           Search
         </button>
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center justify-between mb-2">
         <label className="flex items-center text-secondary">
           <input
             type="checkbox"
             className="mr-2"
             checked={isSearchingAll}
             onChange={(e) => onSearchingAllChange(e.target.checked)}
+            disabled={isIndexingAll}
           />
           Search across all episodes
         </label>
+
+        <button
+          className="bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded-md text-sm transition-colors"
+          onClick={onIndexAll}
+          disabled={isIndexingAll}
+        >
+          Index All Episodes
+        </button>
       </div>
+
+      {isIndexingAll && (
+        <div className="bg-blue-100 text-blue-700 p-2 rounded flex items-center">
+          <div className="inline-block h-4 w-4 mr-2 animate-spin rounded-full border-2 border-solid border-blue-700 border-r-transparent"></div>
+          {indexingMessage || "Loading episode transcripts..."}
+        </div>
+      )}
     </div>
   );
 };
@@ -353,6 +315,24 @@ const SearchResults = ({ results, searchQuery, selectedEpisodeId, onResultClick 
 
 // Main component
 function TranscriptPage() {
+  // Setup search index
+  const searchIndex = useRef(new Document({
+    document: {
+      id: 'id',
+      index: ['text'],
+      store: ['text', 'start', 'episodeId', 'episode', 'title']
+    },
+    tokenize: 'forward',
+    resolution: 9,
+    cache: 100,
+    context: true,
+    language: 'zh',
+    encoder: str => str.toLowerCase()
+  }));
+
+  // Track failed episode loads
+  const failedEpisodes = useRef(new Set());
+
   // Initialize state with reducer
   const [state, dispatch] = useReducer(transcriptReducer, {
     selectedEpisodeId: null,
@@ -364,7 +344,10 @@ function TranscriptPage() {
     error: null,
     sidebarOpen: false,
     currentTimecode: null,
-    isSpotifyLoaded: false
+    isSpotifyLoaded: false,
+    isIndexingAll: false,
+    indexingMessage: '',
+    indexedEpisodes: new Set()
   });
 
   const {
@@ -377,11 +360,11 @@ function TranscriptPage() {
     error,
     sidebarOpen,
     currentTimecode,
-    isSpotifyLoaded
+    isSpotifyLoaded,
+    isIndexingAll,
+    indexingMessage,
+    indexedEpisodes
   } = state;
-
-  // Get search functionality
-  const { addToIndex, search } = useTranscriptSearch();
 
   // Get base URL from Vite configuration
   const baseUrl = import.meta.env.BASE_URL || '/';
@@ -399,6 +382,138 @@ function TranscriptPage() {
     return currentTimecode ? `${baseUrl}&t=${Math.floor(currentTimecode)}` : baseUrl;
   }, [selectedEpisode, currentTimecode]);
 
+  // Add documents to search index
+  const addToIndex = useCallback((documents) => {
+    if (!Array.isArray(documents) || documents.length === 0) return;
+
+    // Get the episode ID from the first document
+    const episodeId = documents[0].episodeId;
+
+    documents.forEach((doc, idx) => {
+      const id = `${doc.episodeId}-${idx}`;
+      searchIndex.current.add({
+        id,
+        text: doc.text,
+        start: doc.start,
+        episodeId: doc.episodeId,
+        episode: doc.episode,
+        title: doc.title
+      });
+    });
+
+    // Mark this episode as indexed
+    dispatch({ type: 'ADD_INDEXED_EPISODE', payload: episodeId });
+
+    logger.log(`Indexed ${documents.length} entries for episode ${documents[0]?.episode || 'unknown'}`);
+  }, []);
+
+  // Function to load a single episode transcript
+  const loadEpisodeTranscript = useCallback(async (episodeId) => {
+    // Skip if we've already tried and failed to load this episode
+    if (failedEpisodes.current.has(episodeId)) {
+      logger.log(`Skipping episode ${episodeId} as it previously failed to load`);
+      return null;
+    }
+
+    try {
+      const episode = episodes.find(ep => ep.id === episodeId);
+      if (!episode) throw new Error('Episode not found');
+
+      const fileName = `EP${episode.episode} ${episode.title}.vtt`;
+      const response = await fetch(`${baseUrl}src/vtt/${fileName}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to load transcript: ${response.statusText}`);
+      }
+
+      const vttText = await response.text();
+      const parsedTranscript = parseVTT(vttText, episodeId, episode.episode, episode.title);
+
+      // Add to search index
+      addToIndex(parsedTranscript);
+
+      // If this is the selected episode, update the transcript
+      if (episodeId === selectedEpisodeId) {
+        dispatch({ type: 'SET_TRANSCRIPT', payload: parsedTranscript });
+      }
+
+      return parsedTranscript;
+    } catch (err) {
+      logger.error(`Error loading transcript for episode ${episodeId}:`, err);
+
+      // Mark as failed so we don't try again
+      failedEpisodes.current.add(episodeId);
+
+      return null;
+    }
+  }, [baseUrl, addToIndex, selectedEpisodeId]);
+
+  // Load all episode transcripts
+  const loadAllEpisodes = useCallback(async () => {
+    // Get episodes that haven't been indexed yet and haven't failed
+    const episodesToLoad = episodes.filter(ep =>
+      !indexedEpisodes.has(ep.id) && !failedEpisodes.current.has(ep.id)
+    );
+
+    if (episodesToLoad.length === 0) {
+      const failedCount = failedEpisodes.current.size;
+      let message = 'All episodes are already processed.';
+
+      if (failedCount > 0) {
+        message += ` (${failedCount} episode${failedCount > 1 ? 's' : ''} unavailable)`;
+      }
+
+      dispatch({
+        type: 'SET_INDEXING_MESSAGE',
+        payload: message
+      });
+      setTimeout(() => {
+        dispatch({ type: 'SET_INDEXING_ALL', payload: false });
+        dispatch({ type: 'SET_INDEXING_MESSAGE', payload: '' });
+      }, 1500);
+      return;
+    }
+
+    // Set loading state
+    dispatch({ type: 'SET_INDEXING_ALL', payload: true });
+
+    let loadedCount = 0;
+    let failedCount = 0;
+    const totalToLoad = episodesToLoad.length;
+
+    // Load each episode one by one
+    for (const episode of episodesToLoad) {
+      dispatch({
+        type: 'SET_INDEXING_MESSAGE',
+        payload: `Loading episode transcripts (${loadedCount + failedCount}/${totalToLoad})...`
+      });
+
+      const result = await loadEpisodeTranscript(episode.id);
+      if (result) {
+        loadedCount++;
+      } else {
+        failedCount++;
+      }
+    }
+
+    // Update message before finishing
+    let finalMessage = `Finished loading ${loadedCount} episode transcript${loadedCount !== 1 ? 's' : ''}.`;
+    if (failedCount > 0) {
+      finalMessage += ` (${failedCount} unavailable)`;
+    }
+
+    dispatch({
+      type: 'SET_INDEXING_MESSAGE',
+      payload: finalMessage
+    });
+
+    // Clear loading state after a short delay
+    setTimeout(() => {
+      dispatch({ type: 'SET_INDEXING_ALL', payload: false });
+      dispatch({ type: 'SET_INDEXING_MESSAGE', payload: '' });
+    }, 1500);
+  }, [episodes, indexedEpisodes, loadEpisodeTranscript]);
+
   // Load transcript when episode changes
   useEffect(() => {
     if (!selectedEpisodeId) return;
@@ -408,46 +523,85 @@ function TranscriptPage() {
       dispatch({ type: 'SET_ERROR', payload: null });
 
       try {
-        const episode = episodes.find(ep => ep.id === selectedEpisodeId);
-        if (!episode) throw new Error('Episode not found');
+        const parsedTranscript = await loadEpisodeTranscript(selectedEpisodeId);
 
-        const fileName = `EP${episode.episode} ${episode.title}.vtt`;
-        const response = await fetch(`${baseUrl}src/vtt/${fileName}`);
-
-        if (!response.ok) {
-          throw new Error(`Failed to load transcript: ${response.statusText}`);
+        if (!parsedTranscript) {
+          throw new Error('Failed to load transcript');
         }
-
-        // FIXME: EP61 is not loaded, don't know why
-        const vttText = await response.text();
-        const parsedTranscript = parseVTT(vttText, selectedEpisodeId, episode.episode, episode.title);
-
-        dispatch({ type: 'SET_TRANSCRIPT', payload: parsedTranscript });
-
-        // Add to search index
-        addToIndex(parsedTranscript);
-
       } catch (err) {
         logger.error('Error loading transcript:', err);
         dispatch({
           type: 'SET_ERROR',
           payload: 'Unable to load transcript. The file may not exist or there was a network error.'
         });
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
 
     loadTranscript();
-  }, [selectedEpisodeId, baseUrl, addToIndex]);
+  }, [selectedEpisodeId, loadEpisodeTranscript]);
+
+  // Load all episodes when searching all is toggled on
+  useEffect(() => {
+    if (isSearchingAll && !isIndexingAll) {
+      // Only load if there are unindexed episodes that haven't failed before
+      const episodesToLoad = episodes.filter(ep =>
+        !indexedEpisodes.has(ep.id) && !failedEpisodes.current.has(ep.id)
+      );
+
+      if (episodesToLoad.length > 0) {
+        loadAllEpisodes();
+      }
+    }
+  }, [isSearchingAll, isIndexingAll, episodes, indexedEpisodes, loadAllEpisodes]);
+
+  // Search function
+  const search = useCallback((query, options = {}) => {
+    if (!query.trim()) return [];
+
+    try {
+      const { episodeId, isSearchingAll = false, limit = 50 } = options;
+
+      const rawResults = searchIndex.current.search(query, {
+        enrich: true,
+        limit
+      });
+
+      // Process and filter results
+      const results = [];
+
+      rawResults.forEach(resultGroup => {
+        if (resultGroup.result && Array.isArray(resultGroup.result)) {
+          resultGroup.result.forEach(item => {
+            if (item && item.doc) {
+              // Only include results from current episode unless searching all
+              if (isSearchingAll || item.doc.episodeId === episodeId) {
+                results.push(item.doc);
+              }
+            }
+          });
+        }
+      });
+
+      return results;
+    } catch (err) {
+      logger.error('Search error:', err);
+      return [];
+    }
+  }, []);
 
   // Handle search
   const handleSearch = useCallback(() => {
+    if (isIndexingAll) return;
+
     const results = search(searchQuery, {
       episodeId: selectedEpisodeId,
       isSearchingAll
     });
 
     dispatch({ type: 'SET_SEARCH_RESULTS', payload: results });
-  }, [search, searchQuery, selectedEpisodeId, isSearchingAll]);
+  }, [search, searchQuery, selectedEpisodeId, isSearchingAll, isIndexingAll]);
 
   // Handle result click
   const handleResultClick = useCallback((result) => {
@@ -464,6 +618,11 @@ function TranscriptPage() {
       dispatch({ type: 'SET_TIMECODE', payload: result.start });
     }
   }, [selectedEpisodeId]);
+
+  // Handle searching all toggle
+  const handleSearchingAllChange = useCallback((value) => {
+    dispatch({ type: 'SET_SEARCHING_ALL', payload: value });
+  }, []);
 
   return (
     <div className="flex h-full min-h-screen bg-primary-light">
@@ -484,7 +643,10 @@ function TranscriptPage() {
           onQueryChange={(value) => dispatch({ type: 'SET_SEARCH_QUERY', payload: value })}
           onSearch={handleSearch}
           isSearchingAll={isSearchingAll}
-          onSearchingAllChange={(value) => dispatch({ type: 'SET_SEARCHING_ALL', payload: value })}
+          onSearchingAllChange={handleSearchingAllChange}
+          isIndexingAll={isIndexingAll}
+          indexingMessage={indexingMessage}
+          onIndexAll={loadAllEpisodes}
         />
 
         {/* Display area - split into two columns on larger screens */}
