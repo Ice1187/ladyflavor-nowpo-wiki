@@ -15,17 +15,6 @@ function TranscriptPage() {
   const [currentTimecode, setCurrentTimecode] = useState(null);
   const [isSpotifyLoaded, setIsSpotifyLoaded] = useState(false);
 
-  // Debug state
-  /*
-  const [debugInfo, setDebugInfo] = useState({
-    indexedEntries: 0,
-    lastIndexedText: '',
-    searchTokens: [],
-    searchDump: null,
-    error: null
-  });
-  */
-
   // Create search index with more explicit Chinese config
   const searchIndex = useRef(new Document({
     document: {
@@ -39,8 +28,6 @@ function TranscriptPage() {
     context: true,
     language: 'zh',
     encoder: str => {
-      // Log what's being encoded (for debugging)
-      // console.log('Encoding:', str);
       return str.toLowerCase();  // Make Chinese-English mixed sentence work for searching
     },
   }));
@@ -97,13 +84,6 @@ function TranscriptPage() {
           lastText = entry.text;
         });
 
-        // Update debug info
-        // setDebugInfo(prev => ({
-        //   ...prev,
-        //   indexedEntries: prev.indexedEntries + indexedCount,
-        //   lastIndexedText: lastText
-        // }));
-
         console.log(`Indexed ${indexedCount} entries for episode ${episode.episode}`);
         console.log('Sample entry text:', lastText);
 
@@ -111,7 +91,6 @@ function TranscriptPage() {
         console.error('Error loading transcript:', err);
         setError('Unable to load transcript. The file may not exist or there was a network error.');
         setTranscript([]);
-        // setDebugInfo(prev => ({ ...prev, error: err.message }));
       } finally {
         setIsLoading(false);
       }
@@ -165,32 +144,9 @@ function TranscriptPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Debug function to log what's in the search index
-  /*
-  const debugSearchIndex = () => {
-    try {
-      // This isn't an actual API method, but trying to show the concept
-      console.log('Search index configuration:', searchIndex.current);
-      console.log('Total indexed items:', debugInfo.indexedEntries);
-      console.log('Last indexed text:', debugInfo.lastIndexedText);
-
-      // Try to search a simple term to see if the index works at all
-      const testSearch = searchIndex.current.search('test', { enrich: true });
-      console.log('Test search results:', testSearch);
-
-      return 'Check browser console for debug info';
-    } catch (err) {
-      console.error('Debug error:', err);
-      return `Error debugging: ${err.message}`;
-    }
-  };
-  */
-
-  // Handle search with debug info
   const handleSearch = () => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
-      // setDebugInfo(prev => ({ ...prev, searchTokens: [], searchDump: null }));
       return;
     }
 
@@ -199,7 +155,6 @@ function TranscriptPage() {
 
     // Simulate what FlexSearch might tokenize for Chinese
     const simpleTokens = searchQuery.split('').filter(char => char.trim());
-    // setDebugInfo(prev => ({ ...prev, searchTokens: simpleTokens }));
 
     let results;
     let rawResults;
@@ -223,9 +178,6 @@ function TranscriptPage() {
 
       console.log('selected Episode Id', selectedEpisodeId);
       console.log('Raw search results:', rawResults);
-
-      // Update debug info
-      // setDebugInfo(prev => ({ ...prev, searchDump: JSON.stringify(rawResults, null, 2) }));
 
       if (rawResults && rawResults.length > 0) {
         // Process the results correctly
@@ -252,7 +204,6 @@ function TranscriptPage() {
       }
     } catch (err) {
       console.error('Search error:', err);
-      // setDebugInfo(prev => ({ ...prev, error: err.message }));
       setSearchResults([]);
     }
   };
@@ -320,37 +271,6 @@ function TranscriptPage() {
             </label>
           </div>
         </div>
-
-        {/* Debug information panel */}
-        {/*
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg shadow-md p-4 mb-6">
-          <h3 className="text-lg font-semibold mb-2 text-yellow-800">Debug Information</h3>
-          <div className="text-sm space-y-2">
-            <p><strong>Indexed entries:</strong> {debugInfo.indexedEntries}</p>
-            <p><strong>Last indexed text sample:</strong> <code className="bg-gray-100 p-1 rounded">{debugInfo.lastIndexedText.substring(0, 50)}...</code></p>
-            <p><strong>Search query tokens:</strong> {debugInfo.searchTokens.map((token, i) => (
-              <span key={i} className="bg-gray-100 px-1 rounded mx-1">{token}</span>
-            ))}</p>
-            {debugInfo.error && (
-              <p className="text-red-600"><strong>Error:</strong> {debugInfo.error}</p>
-            )}
-            <button
-              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs"
-              onClick={debugSearchIndex}
-            >
-              Debug Search Index
-            </button>
-            {debugInfo.searchDump && (
-              <details className="mt-2">
-                <summary className="cursor-pointer text-blue-600">Show raw search results</summary>
-                <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-40 mt-2">
-                  {debugInfo.searchDump}
-                </pre>
-              </details>
-            )}
-          </div>
-        </div>
-        */}
 
         {/* Display area - split into two columns on larger screens */}
         <div className="flex flex-col lg:flex-row gap-6">
