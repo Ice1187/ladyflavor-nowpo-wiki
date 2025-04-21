@@ -420,7 +420,7 @@ function TranscriptPage() {
       if (!episode) throw new Error('Episode not found');
 
       const fileName = `EP${episode.episode} ${episode.title}.vtt`;
-      const response = await fetch(`${baseUrl}src/vtt/${fileName}`);
+      const response = await fetch(`${baseUrl}/vtt/${fileName}`);
 
       if (!response.ok) {
         throw new Error(`Failed to load transcript: ${response.statusText}`);
