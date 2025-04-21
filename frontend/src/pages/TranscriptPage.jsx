@@ -1,183 +1,352 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Document } from 'flexsearch';
+import Sidebar from '../components/Sidebar';
+import { episodes } from '../../../data/episodes';
 
-import transcriptData from '../../../data/transripts.json';
-
-// TODO: FlexSearch seems to be a good tool. Lunr.js is not active maintained.
-
-const TranscriptPage = () => {
-  const [episodes, setEpisodes] = useState([]);
-  const [selectedEpisode, setSelectedEpisode] = useState(null);
+function TranscriptPage() {
+  const [selectedEpisodeId, setSelectedEpisodeId] = useState(null);
+  const [transcript, setTranscript] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearchingAll, setIsSearchingAll] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentTimecode, setCurrentTimecode] = useState(null);
+  const [isSpotifyLoaded, setIsSpotifyLoaded] = useState(false);
+
+  const searchIndex = useRef(new Document({
+    document: {
+      id: 'id',
+      index: ['text'],
+      store: ['text', 'start', 'episodeId', 'episode', 'title']
+    },
+    tokenize: 'forward',
+    language: 'zh'
+  }));
+
+  const selectedEpisode = episodes.find(ep => ep.id === selectedEpisodeId);
+
+  // Get base URL from Vite configuration
+  const baseUrl = import.meta.env.BASE_URL || '/';
+
+  // Toggle sidebar
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  // Effect to load transcript when episode changes
   useEffect(() => {
-    // Load transcript data from JSON file
-    // For GitHub Pages, this file should be in your public folder
-    setEpisodes(transcriptData.episodes || []);
-    setIsLoading(false);
+    if (!selectedEpisodeId) return;
 
-    // Default to first episode if available
-    if (transcriptData.episodes && transcriptData.episodes.length > 0) {
-      setSelectedEpisode(transcriptData.episodes[0]);
+    const loadTranscript = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const episode = episodes.find(ep => ep.id === selectedEpisodeId);
+        if (!episode) throw new Error('Episode not found');
+
+        const fileName = `EP${episode.episode} ${episode.title}.vtt`;
+        // Use baseUrl to make sure the path is correct
+        const response = await fetch(`${baseUrl}src/vtt/${fileName}`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to load transcript: ${response.statusText}`);
+        }
+
+        const vttText = await response.text();
+        const parsedTranscript = parseVTT(vttText, selectedEpisodeId, episode.episode, episode.title);
+
+        setTranscript(parsedTranscript);
+
+        // Add to search index
+        parsedTranscript.forEach((entry, index) => {
+          searchIndex.current.add({
+            id: `${selectedEpisodeId}-${index}`,
+            text: entry.text,
+            start: entry.start,
+            episodeId: selectedEpisodeId,
+            episode: episode.episode,
+            title: episode.title
+          });
+        });
+      } catch (err) {
+        console.error('Error loading transcript:', err);
+        setError('Unable to load transcript. The file may not exist or there was a network error.');
+        setTranscript([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTranscript();
+  }, [selectedEpisodeId, baseUrl]);
+
+  // Parse VTT file content
+  const parseVTT = (vttText, episodeId, episodeNumber, episodeTitle) => {
+    const lines = vttText.split('\n');
+    const entries = [];
+    let currentEntry = null;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      if (line === 'WEBVTT' || line === '') continue;
+
+      if (line.includes('-->')) {
+        const [startTime, endTime] = line.split('-->').map(t => t.trim());
+        currentEntry = {
+          start: convertTimeToSeconds(startTime),
+          end: convertTimeToSeconds(endTime),
+          text: '',
+          episodeId,
+          episode: episodeNumber,
+          title: episodeTitle
+        };
+      } else if (currentEntry && line !== '') {
+        currentEntry.text += line;
+        entries.push({ ...currentEntry });
+        currentEntry = null;
+      }
     }
-  }, []);
 
-  // Function to handle time click, to be passed to TranscriptItem
-  const handleTimeClick = (seconds) => {
-    // This would typically control an audio player, which you could implement
-    console.log(`Seek to ${seconds} seconds`);
-    // Example: if you have an audio player reference
-    // audioPlayerRef.current.currentTime = seconds;
+    return entries;
   };
 
-  // Filter transcript items based on search query
-  const filteredTranscript = useMemo(() => {
-    if (!selectedEpisode || !selectedEpisode.transcript) return [];
+  // Convert timestamp (00:00.000) to seconds
+  const convertTimeToSeconds = (timeString) => {
+    const [minutes, secondsMs] = timeString.split(':');
+    const [seconds, ms] = secondsMs.split('.');
+    return parseInt(minutes) * 60 + parseInt(seconds) + (parseInt(ms || 0) / 1000);
+  };
 
+  // Format seconds to MM:SS display
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Handle search
+  const handleSearch = () => {
     if (!searchQuery.trim()) {
-      return selectedEpisode.transcript;
+      setSearchResults([]);
+      return;
     }
 
-    return selectedEpisode.transcript.filter(item => 
-      item.text.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [selectedEpisode, searchQuery]);
-
-  if (isLoading) {
-    return <div className="p-4 text-center">Loading transcripts...</div>;
-  }
-
-  if (episodes.length === 0) {
-    return <div className="p-4 text-center">No transcript data available.</div>;
-  }
-
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-primary-dark mb-6">Podcast Transcripts</h1>
-
-      {/* Episode selector */}
-      <div className="mb-8">
-        <label htmlFor="episode-select" className="block text-sm font-medium text-gray-700 mb-2">
-          Select Episode
-        </label>
-        <select
-          id="episode-select"
-          value={selectedEpisode?.id || ''}
-          onChange={(e) => {
-            const episode = episodes.find(ep => ep.id === e.target.value);
-            setSelectedEpisode(episode);
-            setSearchQuery(''); // Reset search when changing episodes
-          }}
-          className="w-full p-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-dark focus:border-primary-dark"
-        >
-          {episodes.map(episode => (
-            <option key={episode.id} value={episode.id}>
-              {episode.title}
-            </option>
-          ))}
-        </select>
-      </div>
-      
-      {/* Search bar */}
-      <div className="mb-8">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search in transcript..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full p-3 pl-10 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-dark focus:border-primary-dark"
-          />
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-        </div>
-        {searchQuery && (
-          <div className="mt-2 text-sm text-gray-600">
-            Found {filteredTranscript.length} results for "{searchQuery}"
-          </div>
-        )}
-      </div>
-      
-      {/* Episode details */}
-      {selectedEpisode && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-primary-dark mb-2">{selectedEpisode.title}</h2>
-          {selectedEpisode.date && (
-            <p className="text-gray-600 mb-2">{selectedEpisode.date}</p>
-          )}
-          {selectedEpisode.description && (
-            <p className="text-gray-700">{selectedEpisode.description}</p>
-          )}
-        </div>
-      )}
-      
-      {/* Transcript items */}
-      {selectedEpisode && filteredTranscript.length > 0 ? (
-        <div className="space-y-4">
-          {filteredTranscript.map((item, index) => (
-            <TranscriptItem
-              key={index}
-              time={item.time}
-              text={item.text}
-              searchTerm={searchQuery}
-              onTimeClick={handleTimeClick}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="p-8 text-center bg-white rounded-md shadow">
-          {searchQuery ? 'No matching transcript segments found.' : 'This episode has no transcript available.'}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Custom component for transcript items with highlighted search results
-const TranscriptItem = ({ time, text, searchTerm, onTimeClick }) => {
-  // Function to convert timecode string to seconds (reused from TimelineCard)
-  function timecodeStrToSeconds(timeString) {
-    if (!timeString) return 0;
-    const [minutes, seconds] = timeString.split(':').map(Number);
-    return minutes*60 + seconds;
-  }
-  
-  // Function to highlight search term in text
-  const highlightText = (text, term) => {
-    if (!term || !term.trim()) {
-      return <span>{text}</span>;
+    let results;
+    if (isSearchingAll) {
+      // Search across all indexed episodes
+      results = searchIndex.current.search(searchQuery, {
+        enrich: true,
+        limit: 50
+      });
+    } else if (selectedEpisodeId) {
+      // Search only in current episode
+      results = searchIndex.current.search(searchQuery, {
+        enrich: true,
+        where: { episodeId: selectedEpisodeId },
+        limit: 50
+      });
     }
-    
-    const regex = new RegExp(`(${term.trim()})`, 'gi');
-    const parts = text.split(regex);
-    
-    return (
-      <span>
-        {parts.map((part, i) => 
-          regex.test(part) ? 
-            <span key={i} className="bg-yellow-200 font-medium">{part}</span> : 
-            <span key={i}>{part}</span>
-        )}
-      </span>
-    );
+
+    if (results && results.length > 0) {
+      setSearchResults(results.flatMap(result => result.result));
+    } else {
+      setSearchResults([]);
+    }
   };
-  
+
+  // Jump to timestamp in Spotify player
+  const jumpToTimestamp = (seconds) => {
+    setCurrentTimecode(seconds);
+  };
+
+  const getEmbedUrl = () => {
+    if (!selectedEpisode) return '';
+
+    if (currentTimecode) {
+      return `${selectedEpisode.embed_url}?utm_source=generator&t=${Math.floor(currentTimecode)}`;
+    }
+
+    return `${selectedEpisode.embed_url}?utm_source=generator`;
+  };
+
   return (
-    <div className="p-4 bg-white rounded-md shadow hover:shadow-md transition-shadow border-l-4 border-primary-dark">
-      <div
-        className="font-mono text-sm text-secondary-dark mb-2 cursor-pointer hover:underline"
-        onClick={() => onTimeClick(timecodeStrToSeconds(time))}
-      >
-        {time}
-      </div>
-      <div className="text-gray-800">
-        {highlightText(text, searchTerm)}
+    <div className="flex h-full min-h-screen bg-primary-light">
+      {/* Sidebar */}
+      <Sidebar
+        episodes={episodes}
+        isOpen={sidebarOpen}
+        onToggle={toggleSidebar}
+        selectedEpisodeId={selectedEpisodeId}
+        onSelectEpisode={(id) => {
+          setSelectedEpisodeId(id);
+          setCurrentTimecode(null);
+          setSearchResults([]);
+        }}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 p-4">
+        <h1 className="text-3xl font-bold mb-6 text-secondary-dark">
+          Podcast Transcripts
+        </h1>
+
+        {/* Search bar */}
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <div className="flex flex-col md:flex-row gap-4 mb-3">
+            <input
+              type="text"
+              className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Search in transcripts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <button
+              className="bg-secondary hover:bg-secondary-dark text-white px-4 py-2 rounded-md transition-colors"
+              onClick={handleSearch}
+            >
+              Search
+            </button>
+          </div>
+
+          <div className="flex items-center">
+            <label className="flex items-center text-secondary">
+              <input
+                type="checkbox"
+                className="mr-2"
+                checked={isSearchingAll}
+                onChange={() => setIsSearchingAll(!isSearchingAll)}
+              />
+              Search across all episodes
+            </label>
+          </div>
+        </div>
+
+        {/* Display area - split into two columns on larger screens */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left column: Spotify player + transcript */}
+          <div className="lg:w-7/12">
+            {selectedEpisode ? (
+              <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+                <h2 className="text-xl font-semibold mb-4 text-secondary-dark">
+                  EP{selectedEpisode.episode} - {selectedEpisode.title}
+                </h2>
+
+                {/* Spotify embed */}
+                <div className={`transition-all duration-500 mb-4 ${isSpotifyLoaded ? '' : 'opacity-50 blur-sm'}`}>
+                  <iframe
+                    src={getEmbedUrl()}
+                    className="rounded-xl w-full"
+                    height="152"
+                    frameBorder="0"
+                    allowFullScreen=""
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    onLoad={() => setIsSpotifyLoaded(true)}
+                  ></iframe>
+                </div>
+
+                {/* Transcript */}
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-2 text-secondary-dark">
+                    Transcript
+                  </h3>
+
+                  {isLoading ? (
+                    <div className="text-center py-10">
+                      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-secondary border-r-transparent align-[-0.125em]" role="status">
+                        <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+                          Loading...
+                        </span>
+                      </div>
+                      <p className="mt-2 text-secondary">Loading transcript...</p>
+                    </div>
+                  ) : error ? (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                      {error}
+                    </div>
+                  ) : (
+                    <div className="max-h-[60vh] overflow-y-auto">
+                      {transcript.map((entry, index) => (
+                        <div
+                          key={index}
+                          className="mb-4 p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
+                          onClick={() => jumpToTimestamp(entry.start)}
+                        >
+                          <div className="text-primary-dark font-mono mb-1">
+                            {formatTime(entry.start)}
+                          </div>
+                          <div className="text-gray-700">{entry.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                <p className="text-secondary">Please select an episode to view its transcript.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Right column: Search results */}
+          <div className="lg:w-5/12">
+            <div className="bg-white rounded-lg shadow-md p-4">
+              <h3 className="text-xl font-semibold mb-4 text-secondary-dark">
+                Search Results
+              </h3>
+
+              {searchResults.length === 0 ? (
+                searchQuery ? (
+                  <p className="text-center py-4 text-secondary">No results found for "{searchQuery}".</p>
+                ) : (
+                  <p className="text-center py-4 text-secondary">
+                    Enter a search term to find in the transcripts.
+                  </p>
+                )
+              ) : (
+                <div className="max-h-[70vh] overflow-y-auto">
+                  {searchResults.map((result, index) => (
+                    <div
+                      key={index}
+                      className="mb-4 p-3 border-b hover:bg-gray-50 cursor-pointer"
+                      onClick={() => {
+                        // If result is from a different episode, load that episode first
+                        if (result.episodeId !== selectedEpisodeId) {
+                          setSelectedEpisodeId(result.episodeId);
+                        }
+
+                        // Jump to the timestamp
+                        setTimeout(() => jumpToTimestamp(result.start), 100);
+                      }}
+                    >
+                      <div className="flex justify-between mb-1">
+                        <span className="text-primary-dark font-mono">
+                          {formatTime(result.start)}
+                        </span>
+                        <span className="text-sm text-secondary">
+                          EP{result.episode}
+                        </span>
+                      </div>
+                      <div className="text-gray-700">{result.text}</div>
+                      {result.episodeId !== selectedEpisodeId && (
+                        <div className="mt-1 text-xs text-gray-500 italic">
+                          {result.title}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+}
 
 export default TranscriptPage;
