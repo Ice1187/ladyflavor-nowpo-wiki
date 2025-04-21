@@ -418,6 +418,7 @@ function TranscriptPage() {
           throw new Error(`Failed to load transcript: ${response.statusText}`);
         }
 
+        // FIXME: EP61 is not loaded, don't know why
         const vttText = await response.text();
         const parsedTranscript = parseVTT(vttText, selectedEpisodeId, episode.episode, episode.title);
 
