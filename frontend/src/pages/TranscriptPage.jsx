@@ -15,6 +15,18 @@ function TranscriptPage() {
   const [currentTimecode, setCurrentTimecode] = useState(null);
   const [isSpotifyLoaded, setIsSpotifyLoaded] = useState(false);
 
+  // Debug state
+  /*
+  const [debugInfo, setDebugInfo] = useState({
+    indexedEntries: 0,
+    lastIndexedText: '',
+    searchTokens: [],
+    searchDump: null,
+    error: null
+  });
+  */
+
+  // Create search index with more explicit Chinese config
   const searchIndex = useRef(new Document({
     document: {
       id: 'id',
@@ -22,7 +34,15 @@ function TranscriptPage() {
       store: ['text', 'start', 'episodeId', 'episode', 'title']
     },
     tokenize: 'forward',
-    language: 'zh'
+    resolution: 9,
+    cache: 100,
+    context: true,
+    language: 'zh',
+    encoder: str => {
+      // Log what's being encoded (for debugging)
+      // console.log('Encoding:', str);
+      return str.toLowerCase();  // Make Chinese-English mixed sentence work for searching
+    },
   }));
 
   const selectedEpisode = episodes.find(ep => ep.id === selectedEpisodeId);
@@ -46,7 +66,6 @@ function TranscriptPage() {
         if (!episode) throw new Error('Episode not found');
 
         const fileName = `EP${episode.episode} ${episode.title}.vtt`;
-        // Use baseUrl to make sure the path is correct
         const response = await fetch(`${baseUrl}src/vtt/${fileName}`);
 
         if (!response.ok) {
@@ -58,21 +77,39 @@ function TranscriptPage() {
 
         setTranscript(parsedTranscript);
 
+        let indexedCount = 0;
+        let lastText = '';
+
         // Add to search index
         parsedTranscript.forEach((entry, index) => {
+          const id = `${selectedEpisodeId}-${index}`;
           searchIndex.current.add({
-            id: `${selectedEpisodeId}-${index}`,
+            id: id,
             text: entry.text,
             start: entry.start,
             episodeId: selectedEpisodeId,
             episode: episode.episode,
             title: episode.title
           });
+          indexedCount++;
+          lastText = entry.text;
         });
+
+        // Update debug info
+        // setDebugInfo(prev => ({
+        //   ...prev,
+        //   indexedEntries: prev.indexedEntries + indexedCount,
+        //   lastIndexedText: lastText
+        // }));
+
+        console.log(`Indexed ${indexedCount} entries for episode ${episode.episode}`);
+        console.log('Sample entry text:', lastText);
+
       } catch (err) {
         console.error('Error loading transcript:', err);
         setError('Unable to load transcript. The file may not exist or there was a network error.');
         setTranscript([]);
+        // setDebugInfo(prev => ({ ...prev, error: err.message }));
       } finally {
         setIsLoading(false);
       }
@@ -126,32 +163,94 @@ function TranscriptPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Handle search
+  // Debug function to log what's in the search index
+  /*
+  const debugSearchIndex = () => {
+    try {
+      // This isn't an actual API method, but trying to show the concept
+      console.log('Search index configuration:', searchIndex.current);
+      console.log('Total indexed items:', debugInfo.indexedEntries);
+      console.log('Last indexed text:', debugInfo.lastIndexedText);
+
+      // Try to search a simple term to see if the index works at all
+      const testSearch = searchIndex.current.search('test', { enrich: true });
+      console.log('Test search results:', testSearch);
+
+      return 'Check browser console for debug info';
+    } catch (err) {
+      console.error('Debug error:', err);
+      return `Error debugging: ${err.message}`;
+    }
+  };
+  */
+
+  // Handle search with debug info
   const handleSearch = () => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
+      // setDebugInfo(prev => ({ ...prev, searchTokens: [], searchDump: null }));
       return;
     }
 
-    let results;
-    if (isSearchingAll) {
-      // Search across all indexed episodes
-      results = searchIndex.current.search(searchQuery, {
-        enrich: true,
-        limit: 50
-      });
-    } else if (selectedEpisodeId) {
-      // Search only in current episode
-      results = searchIndex.current.search(searchQuery, {
-        enrich: true,
-        where: { episodeId: selectedEpisodeId },
-        limit: 50
-      });
-    }
+    // Log the search query for debugging
+    console.log('Searching for:', searchQuery);
 
-    if (results && results.length > 0) {
-      setSearchResults(results.flatMap(result => result.result));
-    } else {
+    // Simulate what FlexSearch might tokenize for Chinese
+    const simpleTokens = searchQuery.split('').filter(char => char.trim());
+    // setDebugInfo(prev => ({ ...prev, searchTokens: simpleTokens }));
+
+    let results;
+    let rawResults;
+
+    try {
+      if (isSearchingAll) {
+        // Search across all indexed episodes
+        console.log('Searching all episodes');
+        rawResults = searchIndex.current.search(searchQuery, {
+          enrich: true,
+          limit: 50
+        });
+      } else if (selectedEpisodeId) {
+        // Search only in current episode
+        console.log('Searching only current episode:', selectedEpisodeId);
+        rawResults = searchIndex.current.search(searchQuery, {
+          enrich: true,
+          where: { episodeId: selectedEpisodeId },
+          limit: 50
+        });
+      }
+
+      console.log('Raw search results:', rawResults);
+
+      // Update debug info
+      // setDebugInfo(prev => ({ ...prev, searchDump: JSON.stringify(rawResults, null, 2) }));
+
+      if (rawResults && rawResults.length > 0) {
+        // Process the results correctly
+        results = [];
+
+        rawResults.forEach(resultGroup => {
+          console.log('Result group:', resultGroup);
+          if (resultGroup.result && Array.isArray(resultGroup.result)) {
+            resultGroup.result.forEach(item => {
+              // Make sure we have all the required fields
+              if (item && typeof item === 'object') {
+                results.push(item);
+                console.log('Added result item:', item);
+              }
+            });
+          }
+        });
+
+        console.log('Final processed results:', results.length, results);
+        setSearchResults(results);
+      } else {
+        console.log('No results found');
+        setSearchResults([]);
+      }
+    } catch (err) {
+      console.error('Search error:', err);
+      // setDebugInfo(prev => ({ ...prev, error: err.message }));
       setSearchResults([]);
     }
   };
@@ -224,6 +323,37 @@ function TranscriptPage() {
           </div>
         </div>
 
+        {/* Debug information panel */}
+        {/*
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg shadow-md p-4 mb-6">
+          <h3 className="text-lg font-semibold mb-2 text-yellow-800">Debug Information</h3>
+          <div className="text-sm space-y-2">
+            <p><strong>Indexed entries:</strong> {debugInfo.indexedEntries}</p>
+            <p><strong>Last indexed text sample:</strong> <code className="bg-gray-100 p-1 rounded">{debugInfo.lastIndexedText.substring(0, 50)}...</code></p>
+            <p><strong>Search query tokens:</strong> {debugInfo.searchTokens.map((token, i) => (
+              <span key={i} className="bg-gray-100 px-1 rounded mx-1">{token}</span>
+            ))}</p>
+            {debugInfo.error && (
+              <p className="text-red-600"><strong>Error:</strong> {debugInfo.error}</p>
+            )}
+            <button
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs"
+              onClick={debugSearchIndex}
+            >
+              Debug Search Index
+            </button>
+            {debugInfo.searchDump && (
+              <details className="mt-2">
+                <summary className="cursor-pointer text-blue-600">Show raw search results</summary>
+                <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-40 mt-2">
+                  {debugInfo.searchDump}
+                </pre>
+              </details>
+            )}
+          </div>
+        </div>
+        */}
+
         {/* Display area - split into two columns on larger screens */}
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left column: Spotify player + transcript */}
@@ -278,7 +408,14 @@ function TranscriptPage() {
                           <div className="text-primary-dark font-mono mb-1">
                             {formatTime(entry.start)}
                           </div>
-                          <div className="text-gray-700">{entry.text}</div>
+                          <div className="text-gray-700">
+                            {/* Fix: Add null check for entry.text and searchQuery */}
+                            {searchQuery && entry.text && entry.text.includes(searchQuery) ? (
+                              <mark className="bg-yellow-200">{entry.text}</mark>
+                            ) : (
+                              entry.text
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -309,36 +446,57 @@ function TranscriptPage() {
                 )
               ) : (
                 <div className="max-h-[70vh] overflow-y-auto">
-                  {searchResults.map((result, index) => (
-                    <div
-                      key={index}
-                      className="mb-4 p-3 border-b hover:bg-gray-50 cursor-pointer"
-                      onClick={() => {
-                        // If result is from a different episode, load that episode first
-                        if (result.episodeId !== selectedEpisodeId) {
-                          setSelectedEpisodeId(result.episodeId);
-                        }
+                  {searchResults.map((result, index) => {
+                    // Debug what we're getting in each result
+                    console.log(`Rendering result ${index}:`, result);
 
-                        // Jump to the timestamp
-                        setTimeout(() => jumpToTimestamp(result.start), 100);
-                      }}
-                    >
-                      <div className="flex justify-between mb-1">
-                        <span className="text-primary-dark font-mono">
-                          {formatTime(result.start)}
-                        </span>
-                        <span className="text-sm text-secondary">
-                          EP{result.episode}
-                        </span>
-                      </div>
-                      <div className="text-gray-700">{result.text}</div>
-                      {result.episodeId !== selectedEpisodeId && (
-                        <div className="mt-1 text-xs text-gray-500 italic">
-                          {result.title}
+                    return (
+                      <div
+                        key={index}
+                        className="mb-4 p-3 border-b hover:bg-gray-50 cursor-pointer"
+                        onClick={() => {
+                          // If result is from a different episode, load that episode first
+                          if (result.doc.episodeId !== selectedEpisodeId) {
+                            setSelectedEpisodeId(result.doc.episodeId);
+                          }
+
+                          // Jump to the timestamp
+                          setTimeout(() => jumpToTimestamp(result.doc.start), 100);
+                        }}
+                      >
+                        <div className="flex justify-between mb-1">
+                          <span className="text-primary-dark font-mono">
+                            {/* Handle start time correctly */}
+                            {typeof result.doc.start === 'number'
+                              ? formatTime(result.doc.start)
+                              : 'Unknown time'}
+                          </span>
+                          <span className="text-sm text-secondary">
+                            {/* Handle episode number correctly */}
+                            EP{result.doc.episode || '?'}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <div className="text-gray-700">
+                          {/* Highlight search term in the result text */}
+                          {searchQuery && result.doc.text && result.doc.text.includes(searchQuery) ? (
+                            <span dangerouslySetInnerHTML={{
+                              __html: result.doc.text.replace(
+                                new RegExp(`(${searchQuery})`, 'gi'),
+                                '<mark class="bg-yellow-200">$1</mark>'
+                              )
+                            }} />
+                          ) : (
+                            result.doc.text || ""
+                          )}
+                        </div>
+                        {result.doc.episodeId !== selectedEpisodeId && (
+                          <div className="mt-1 text-xs text-gray-500 italic">
+                            {result.doc.title || ""}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
