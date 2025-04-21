@@ -1,22 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useReducer, useMemo, useCallback } from 'react';
 import { Document } from 'flexsearch';
 import Sidebar from '../components/Sidebar';
 import { episodes } from '../../../data/episodes';
 
-function TranscriptPage() {
-  const [selectedEpisodeId, setSelectedEpisodeId] = useState(null);
-  const [transcript, setTranscript] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearchingAll, setIsSearchingAll] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [currentTimecode, setCurrentTimecode] = useState(null);
-  const [isSpotifyLoaded, setIsSpotifyLoaded] = useState(false);
+// Logger utility - only logs in development
+const logger = {
+  log: process.env.NODE_ENV === 'development' ? console.log : () => { },
+  error: console.error,
+  warn: console.warn
+};
 
-  // Create search index with more explicit Chinese config
-  const searchIndex = useRef(new Document({
+// Custom hook for transcript search functionality
+function useTranscriptSearch() {
+  // Create search index with explicit Chinese config
+  const index = useRef(new Document({
     document: {
       id: 'id',
       index: ['text'],
@@ -27,28 +24,388 @@ function TranscriptPage() {
     cache: 100,
     context: true,
     language: 'zh',
-    encoder: str => {
-      return str.toLowerCase();  // Make Chinese-English mixed sentence work for searching
-    },
+    encoder: str => str.toLowerCase()
   }));
 
-  const selectedEpisode = episodes.find(ep => ep.id === selectedEpisodeId);
+  // Add documents to the search index
+  const addToIndex = useCallback((documents) => {
+    if (!Array.isArray(documents)) return;
+
+    documents.forEach((doc, idx) => {
+      const id = `${doc.episodeId}-${idx}`;
+      index.current.add({
+        id,
+        text: doc.text,
+        start: doc.start,
+        episodeId: doc.episodeId,
+        episode: doc.episode,
+        title: doc.title
+      });
+    });
+
+    logger.log(`Indexed ${documents.length} entries for episode ${documents[0]?.episode || 'unknown'}`);
+  }, []);
+
+  // Search the index
+  const search = useCallback((query, options = {}) => {
+    if (!query.trim()) return [];
+
+    try {
+      const { episodeId, isSearchingAll = false, limit = 50 } = options;
+
+      const rawResults = index.current.search(query, {
+        enrich: true,
+        limit
+      });
+
+      // Process and filter results
+      const results = [];
+
+      rawResults.forEach(resultGroup => {
+        if (resultGroup.result && Array.isArray(resultGroup.result)) {
+          resultGroup.result.forEach(item => {
+            if (item && item.doc) {
+              // Only include results from current episode unless searching all
+              if (isSearchingAll || item.doc.episodeId === episodeId) {
+                results.push(item.doc);
+              }
+            }
+          });
+        }
+      });
+
+      return results;
+    } catch (err) {
+      logger.error('Search error:', err);
+      return [];
+    }
+  }, []);
+
+  return { addToIndex, search };
+}
+
+// Reducer for state management
+function transcriptReducer(state, action) {
+  switch (action.type) {
+    case 'SET_EPISODE':
+      return {
+        ...state,
+        selectedEpisodeId: action.payload,
+        currentTimecode: null,
+        searchResults: [],
+        error: null
+      };
+    case 'SET_TRANSCRIPT':
+      return { ...state, transcript: action.payload, isLoading: false };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload, isLoading: false };
+    case 'SET_SEARCH_QUERY':
+      return { ...state, searchQuery: action.payload };
+    case 'SET_SEARCH_RESULTS':
+      return { ...state, searchResults: action.payload };
+    case 'SET_SEARCHING_ALL':
+      return { ...state, isSearchingAll: action.payload };
+    case 'TOGGLE_SIDEBAR':
+      return { ...state, sidebarOpen: !state.sidebarOpen };
+    case 'SET_TIMECODE':
+      return { ...state, currentTimecode: action.payload };
+    case 'SET_SPOTIFY_LOADED':
+      return { ...state, isSpotifyLoaded: action.payload };
+    default:
+      return state;
+  }
+}
+
+// Utility functions
+const convertTimeToSeconds = (timeString) => {
+  const [minutes, secondsMs] = timeString.split(':');
+  const [seconds, ms] = secondsMs.split('.');
+  return parseInt(minutes) * 60 + parseInt(seconds) + (parseInt(ms || 0) / 1000);
+};
+
+const formatTime = (seconds) => {
+  if (isNaN(seconds) || seconds < 0) return '0:00';
+
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  if (hours > 0) {
+    return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+// VTT parser with improved handling of multi-line captions
+const parseVTT = (vttText, episodeId, episodeNumber, episodeTitle) => {
+  const lines = vttText.split('\n');
+  const entries = [];
+  let currentEntry = null;
+  let textBuffer = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (line === 'WEBVTT' || line === '') continue;
+
+    if (line.includes('-->')) {
+      // Save previous entry if exists
+      if (currentEntry && textBuffer) {
+        currentEntry.text = textBuffer.trim();
+        entries.push({ ...currentEntry });
+        textBuffer = '';
+      }
+
+      const [startTime, endTime] = line.split('-->').map(t => t.trim());
+      currentEntry = {
+        start: convertTimeToSeconds(startTime),
+        end: convertTimeToSeconds(endTime),
+        text: '',
+        episodeId,
+        episode: episodeNumber,
+        title: episodeTitle
+      };
+    } else if (currentEntry && line !== '') {
+      // Accumulate text instead of creating new entries
+      textBuffer += (textBuffer ? ' ' : '') + line;
+    }
+  }
+
+  // Add the last entry
+  if (currentEntry && textBuffer) {
+    currentEntry.text = textBuffer.trim();
+    entries.push({ ...currentEntry });
+  }
+
+  return entries;
+};
+
+// Smaller components
+const HighlightedText = ({ text, searchTerm }) => {
+  if (!searchTerm || !text || !text.includes(searchTerm)) {
+    return <span>{text || ""}</span>;
+  }
+
+  return (
+    <span dangerouslySetInnerHTML={{
+      __html: text.replace(
+        new RegExp(`(${searchTerm})`, 'gi'),
+        '<mark class="bg-yellow-200">$1</mark>'
+      )
+    }} />
+  );
+};
+
+const SearchBar = ({ query, onQueryChange, onSearch, isSearchingAll, onSearchingAllChange }) => {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+      <div className="flex flex-col md:flex-row gap-4 mb-3">
+        <input
+          type="text"
+          className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          placeholder="Search in transcripts..."
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+        />
+        <button
+          className="bg-secondary hover:bg-secondary-dark text-white px-4 py-2 rounded-md transition-colors"
+          onClick={onSearch}
+        >
+          Search
+        </button>
+      </div>
+
+      <div className="flex items-center">
+        <label className="flex items-center text-secondary">
+          <input
+            type="checkbox"
+            className="mr-2"
+            checked={isSearchingAll}
+            onChange={(e) => onSearchingAllChange(e.target.checked)}
+          />
+          Search across all episodes
+        </label>
+      </div>
+    </div>
+  );
+};
+
+const SpotifyEmbed = ({ url, onLoad }) => {
+  return (
+    <iframe
+      src={url}
+      className="rounded-xl w-full"
+      height="152"
+      frameBorder="0"
+      allowFullScreen=""
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+      loading="lazy"
+      onLoad={onLoad}
+    ></iframe>
+  );
+};
+
+const TranscriptEntry = ({ entry, searchQuery, onTimestampClick }) => {
+  return (
+    <div
+      className="mb-4 p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
+      onClick={() => onTimestampClick(entry.start)}
+    >
+      <div className="text-primary-dark font-mono mb-1">
+        {formatTime(entry.start)}
+      </div>
+      <div className="text-gray-700">
+        <HighlightedText text={entry.text} searchTerm={searchQuery} />
+      </div>
+    </div>
+  );
+};
+
+const TranscriptView = ({ transcript, isLoading, error, searchQuery, onTimestampClick }) => {
+  if (isLoading) {
+    return (
+      <div className="text-center py-10">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-secondary border-r-transparent align-[-0.125em]" role="status">
+          <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+            Loading...
+          </span>
+        </div>
+        <p className="mt-2 text-secondary">Loading transcript...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        {error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-h-[60vh] overflow-y-auto">
+      {transcript.map((entry, index) => (
+        <TranscriptEntry
+          key={index}
+          entry={entry}
+          searchQuery={searchQuery}
+          onTimestampClick={onTimestampClick}
+        />
+      ))}
+    </div>
+  );
+};
+
+const SearchResultItem = ({ result, selectedEpisodeId, onResultClick }) => {
+  return (
+    <div
+      className="mb-4 p-3 border-b hover:bg-gray-50 cursor-pointer"
+      onClick={() => onResultClick(result)}
+    >
+      <div className="flex justify-between mb-1">
+        <span className="text-primary-dark font-mono">
+          {typeof result.start === 'number' ? formatTime(result.start) : 'Unknown time'}
+        </span>
+        <span className="text-sm text-secondary">
+          EP{result.episode || '?'}
+        </span>
+      </div>
+      <div className="text-gray-700">
+        <HighlightedText text={result.text} searchTerm={result.searchQuery} />
+      </div>
+      {result.episodeId !== selectedEpisodeId && (
+        <div className="mt-1 text-xs text-gray-500 italic">
+          {result.title || ""}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SearchResults = ({ results, searchQuery, selectedEpisodeId, onResultClick }) => {
+  if (results.length === 0) {
+    return (
+      <p className="text-center py-4 text-secondary">
+        {searchQuery
+          ? `No results found for "${searchQuery}".`
+          : "Enter a search term to find in the transcripts."}
+      </p>
+    );
+  }
+
+  return (
+    <div className="max-h-[70vh] overflow-y-auto">
+      {results.map((result, index) => (
+        <SearchResultItem
+          key={index}
+          result={{ ...result, searchQuery }}
+          selectedEpisodeId={selectedEpisodeId}
+          onResultClick={onResultClick}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Main component
+function TranscriptPage() {
+  // Initialize state with reducer
+  const [state, dispatch] = useReducer(transcriptReducer, {
+    selectedEpisodeId: null,
+    transcript: [],
+    searchQuery: '',
+    searchResults: [],
+    isSearchingAll: false,
+    isLoading: false,
+    error: null,
+    sidebarOpen: false,
+    currentTimecode: null,
+    isSpotifyLoaded: false
+  });
+
+  const {
+    selectedEpisodeId,
+    transcript,
+    searchQuery,
+    searchResults,
+    isSearchingAll,
+    isLoading,
+    error,
+    sidebarOpen,
+    currentTimecode,
+    isSpotifyLoaded
+  } = state;
+
+  // Get search functionality
+  const { addToIndex, search } = useTranscriptSearch();
 
   // Get base URL from Vite configuration
   const baseUrl = import.meta.env.BASE_URL || '/';
 
-  // Toggle sidebar
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  // Memoize selected episode
+  const selectedEpisode = useMemo(() => (
+    episodes.find(ep => ep.id === selectedEpisodeId)
+  ), [selectedEpisodeId]);
 
+  // Memoize Spotify embed URL
+  const embedUrl = useMemo(() => {
+    if (!selectedEpisode) return '';
 
+    const baseUrl = `${selectedEpisode.embed_url}?utm_source=generator`;
+    return currentTimecode ? `${baseUrl}&t=${Math.floor(currentTimecode)}` : baseUrl;
+  }, [selectedEpisode, currentTimecode]);
 
-  // Effect to load transcript when episode changes
+  // Load transcript when episode changes
   useEffect(() => {
     if (!selectedEpisodeId) return;
 
     const loadTranscript = async () => {
-      setIsLoading(true);
-      setError(null);
+      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: 'SET_ERROR', payload: null });
 
       try {
         const episode = episodes.find(ep => ep.id === selectedEpisodeId);
@@ -64,164 +421,48 @@ function TranscriptPage() {
         const vttText = await response.text();
         const parsedTranscript = parseVTT(vttText, selectedEpisodeId, episode.episode, episode.title);
 
-        setTranscript(parsedTranscript);
-
-        let indexedCount = 0;
-        let lastText = '';
+        dispatch({ type: 'SET_TRANSCRIPT', payload: parsedTranscript });
 
         // Add to search index
-        parsedTranscript.forEach((entry, index) => {
-          const id = `${selectedEpisodeId}-${index}`;
-          searchIndex.current.add({
-            id: id,
-            text: entry.text,
-            start: entry.start,
-            episodeId: selectedEpisodeId,
-            episode: episode.episode,
-            title: episode.title
-          });
-          indexedCount++;
-          lastText = entry.text;
-        });
-
-        console.log(`Indexed ${indexedCount} entries for episode ${episode.episode}`);
-        console.log('Sample entry text:', lastText);
+        addToIndex(parsedTranscript);
 
       } catch (err) {
-        console.error('Error loading transcript:', err);
-        setError('Unable to load transcript. The file may not exist or there was a network error.');
-        setTranscript([]);
-      } finally {
-        setIsLoading(false);
+        logger.error('Error loading transcript:', err);
+        dispatch({
+          type: 'SET_ERROR',
+          payload: 'Unable to load transcript. The file may not exist or there was a network error.'
+        });
       }
     };
 
     loadTranscript();
-  }, [selectedEpisodeId, baseUrl]);
+  }, [selectedEpisodeId, baseUrl, addToIndex]);
 
-  // Parse VTT file content
-  const parseVTT = (vttText, episodeId, episodeNumber, episodeTitle) => {
-    const lines = vttText.split('\n');
-    const entries = [];
-    let currentEntry = null;
+  // Handle search
+  const handleSearch = useCallback(() => {
+    const results = search(searchQuery, {
+      episodeId: selectedEpisodeId,
+      isSearchingAll
+    });
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+    dispatch({ type: 'SET_SEARCH_RESULTS', payload: results });
+  }, [search, searchQuery, selectedEpisodeId, isSearchingAll]);
 
-      if (line === 'WEBVTT' || line === '') continue;
+  // Handle result click
+  const handleResultClick = useCallback((result) => {
+    // If result is from a different episode, load that episode first
+    if (result.episodeId !== selectedEpisodeId) {
+      dispatch({ type: 'SET_EPISODE', payload: result.episodeId });
 
-      if (line.includes('-->')) {
-        const [startTime, endTime] = line.split('-->').map(t => t.trim());
-        currentEntry = {
-          start: convertTimeToSeconds(startTime),
-          end: convertTimeToSeconds(endTime),
-          text: '',
-          episodeId,
-          episode: episodeNumber,
-          title: episodeTitle
-        };
-      } else if (currentEntry && line !== '') {
-        currentEntry.text += line;
-        entries.push({ ...currentEntry });
-        currentEntry = null;
-      }
+      // Use setTimeout to wait for episode to load before jumping to timestamp
+      setTimeout(() => {
+        dispatch({ type: 'SET_TIMECODE', payload: result.start });
+      }, 100);
+    } else {
+      // Jump to timestamp directly
+      dispatch({ type: 'SET_TIMECODE', payload: result.start });
     }
-
-    return entries;
-  };
-
-  // Convert timestamp (00:00.000) to seconds
-  const convertTimeToSeconds = (timeString) => {
-    const [minutes, secondsMs] = timeString.split(':');
-    const [seconds, ms] = secondsMs.split('.');
-    return parseInt(minutes) * 60 + parseInt(seconds) + (parseInt(ms || 0) / 1000);
-  };
-
-  // Format seconds to MM:SS display
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleSearch = () => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    // Log the search query for debugging
-    console.log('Searching for:', searchQuery);
-
-    // Simulate what FlexSearch might tokenize for Chinese
-    const simpleTokens = searchQuery.split('').filter(char => char.trim());
-
-    let results;
-    let rawResults;
-
-    try {
-      // Searching all episodes
-      rawResults = searchIndex.current.search(searchQuery, {
-        enrich: true,
-        limit: 50
-      });
-      if (!isSearchingAll && selectedEpisodeId) {
-        // If we're not searching all episodes and have a selected episode, filter the results
-        console.log('Filtering to only current episode:', selectedEpisodeId);
-        rawResults = rawResults.map(category => ({
-          field: category.field,
-          result: category.result.filter(item =>
-            item.doc && item.doc.episodeId === selectedEpisodeId
-          )
-        })).filter(category => category.result.length > 0);
-      }
-
-      console.log('selected Episode Id', selectedEpisodeId);
-      console.log('Raw search results:', rawResults);
-
-      if (rawResults && rawResults.length > 0) {
-        // Process the results correctly
-        results = [];
-
-        rawResults.forEach(resultGroup => {
-          console.log('Result group:', resultGroup);
-          if (resultGroup.result && Array.isArray(resultGroup.result)) {
-            resultGroup.result.forEach(item => {
-              // Make sure we have all the required fields
-              if (item && typeof item === 'object') {
-                results.push(item.doc);
-                console.log('Added result item:', item.doc);
-              }
-            });
-          }
-        });
-
-        console.log('Final processed results:', results.length, results);
-        setSearchResults(results);
-      } else {
-        console.log('No results found');
-        setSearchResults([]);
-      }
-    } catch (err) {
-      console.error('Search error:', err);
-      setSearchResults([]);
-    }
-  };
-
-  // Jump to timestamp in Spotify player
-  const jumpToTimestamp = (seconds) => {
-    setCurrentTimecode(seconds);
-  };
-
-  const getEmbedUrl = () => {
-    if (!selectedEpisode) return '';
-
-    if (currentTimecode) {
-      return `${selectedEpisode.embed_url}?utm_source=generator&t=${Math.floor(currentTimecode)}`;
-    }
-
-    return `${selectedEpisode.embed_url}?utm_source=generator`;
-  };
+  }, [selectedEpisodeId]);
 
   return (
     <div className="flex h-full min-h-screen bg-primary-light">
@@ -229,48 +470,21 @@ function TranscriptPage() {
       <Sidebar
         episodes={episodes}
         isOpen={sidebarOpen}
-        onToggle={toggleSidebar}
+        onToggle={() => dispatch({ type: 'TOGGLE_SIDEBAR' })}
         selectedEpisodeId={selectedEpisodeId}
-        onSelectEpisode={(id) => {
-          setSelectedEpisodeId(id);
-          setCurrentTimecode(null);
-          setSearchResults([]);
-        }}
+        onSelectEpisode={(id) => dispatch({ type: 'SET_EPISODE', payload: id })}
       />
 
       {/* Main Content */}
       <div className="flex-1 p-4">
         {/* Search bar */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4 mb-3">
-            <input
-              type="text"
-              className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Search in transcripts..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
-            <button
-              className="bg-secondary hover:bg-secondary-dark text-white px-4 py-2 rounded-md transition-colors"
-              onClick={handleSearch}
-            >
-              Search
-            </button>
-          </div>
-
-          <div className="flex items-center">
-            <label className="flex items-center text-secondary">
-              <input
-                type="checkbox"
-                className="mr-2"
-                checked={isSearchingAll}
-                onChange={() => setIsSearchingAll(!isSearchingAll)}
-              />
-              Search across all episodes
-            </label>
-          </div>
-        </div>
+        <SearchBar
+          query={searchQuery}
+          onQueryChange={(value) => dispatch({ type: 'SET_SEARCH_QUERY', payload: value })}
+          onSearch={handleSearch}
+          isSearchingAll={isSearchingAll}
+          onSearchingAllChange={(value) => dispatch({ type: 'SET_SEARCHING_ALL', payload: value })}
+        />
 
         {/* Display area - split into two columns on larger screens */}
         <div className="flex flex-col lg:flex-row gap-6">
@@ -284,16 +498,10 @@ function TranscriptPage() {
 
                 {/* Spotify embed */}
                 <div className={`transition-all duration-500 mb-4 ${isSpotifyLoaded ? '' : 'opacity-50 blur-sm'}`}>
-                  <iframe
-                    src={getEmbedUrl()}
-                    className="rounded-xl w-full"
-                    height="152"
-                    frameBorder="0"
-                    allowFullScreen=""
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    onLoad={() => setIsSpotifyLoaded(true)}
-                  ></iframe>
+                  <SpotifyEmbed
+                    url={embedUrl}
+                    onLoad={() => dispatch({ type: 'SET_SPOTIFY_LOADED', payload: true })}
+                  />
                 </div>
 
                 {/* Transcript */}
@@ -302,42 +510,13 @@ function TranscriptPage() {
                     Transcript
                   </h3>
 
-                  {isLoading ? (
-                    <div className="text-center py-10">
-                      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-secondary border-r-transparent align-[-0.125em]" role="status">
-                        <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-                          Loading...
-                        </span>
-                      </div>
-                      <p className="mt-2 text-secondary">Loading transcript...</p>
-                    </div>
-                  ) : error ? (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                      {error}
-                    </div>
-                  ) : (
-                    <div className="max-h-[60vh] overflow-y-auto">
-                      {transcript.map((entry, index) => (
-                        <div
-                          key={index}
-                          className="mb-4 p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors"
-                          onClick={() => jumpToTimestamp(entry.start)}
-                        >
-                          <div className="text-primary-dark font-mono mb-1">
-                            {formatTime(entry.start)}
-                          </div>
-                          <div className="text-gray-700">
-                            {/* Fix: Add null check for entry.text and searchQuery */}
-                            {searchQuery && entry.text && entry.text.includes(searchQuery) ? (
-                              <mark className="bg-yellow-200">{entry.text}</mark>
-                            ) : (
-                              entry.text
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <TranscriptView
+                    transcript={transcript}
+                    isLoading={isLoading}
+                    error={error}
+                    searchQuery={searchQuery}
+                    onTimestampClick={(time) => dispatch({ type: 'SET_TIMECODE', payload: time })}
+                  />
                 </div>
               </div>
             ) : (
@@ -354,69 +533,12 @@ function TranscriptPage() {
                 Search Results
               </h3>
 
-              {searchResults.length === 0 ? (
-                searchQuery ? (
-                  <p className="text-center py-4 text-secondary">No results found for "{searchQuery}".</p>
-                ) : (
-                  <p className="text-center py-4 text-secondary">
-                    Enter a search term to find in the transcripts.
-                  </p>
-                )
-              ) : (
-                <div className="max-h-[70vh] overflow-y-auto">
-                  {searchResults.map((result, index) => {
-                    // Debug what we're getting in each result
-                    console.log(`Rendering result ${index}:`, result);
-
-                    return (
-                      <div
-                        key={index}
-                        className="mb-4 p-3 border-b hover:bg-gray-50 cursor-pointer"
-                        onClick={() => {
-                          // If result is from a different episode, load that episode first
-                          if (result.episodeId !== selectedEpisodeId) {
-                            setSelectedEpisodeId(result.episodeId);
-                          }
-
-                          // Jump to the timestamp
-                          setTimeout(() => jumpToTimestamp(result.start), 100);
-                        }}
-                      >
-                        <div className="flex justify-between mb-1">
-                          <span className="text-primary-dark font-mono">
-                            {/* Handle start time correctly */}
-                            {typeof result.start === 'number'
-                              ? formatTime(result.start)
-                              : 'Unknown time'}
-                          </span>
-                          <span className="text-sm text-secondary">
-                            {/* Handle episode number correctly */}
-                            EP{result.episode || '?'}
-                          </span>
-                        </div>
-                        <div className="text-gray-700">
-                          {/* Highlight search term in the result text */}
-                          {searchQuery && result.text && result.text.includes(searchQuery) ? (
-                            <span dangerouslySetInnerHTML={{
-                              __html: result.text.replace(
-                                new RegExp(`(${searchQuery})`, 'gi'),
-                                '<mark class="bg-yellow-200">$1</mark>'
-                              )
-                            }} />
-                          ) : (
-                            result.text || ""
-                          )}
-                        </div>
-                        {result.episodeId !== selectedEpisodeId && (
-                          <div className="mt-1 text-xs text-gray-500 italic">
-                            {result.title || ""}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <SearchResults
+                results={searchResults}
+                searchQuery={searchQuery}
+                selectedEpisodeId={selectedEpisodeId}
+                onResultClick={handleResultClick}
+              />
             </div>
           </div>
         </div>
